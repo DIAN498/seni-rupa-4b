@@ -1,0 +1,3566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Studio Seni Cilik — Kelas 4B SD Negeri Tambakrejo</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka (Judul Ramah Anak) & Nunito (Teks Jelas & Mudah Dibaca) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* =====================================================================
+       PENGATURAN DASAR & OPTIMASI LAYAR SENTUH HP ANDROID
+    ===================================================================== */
+    html, body {
+      overscroll-behavior-y: contain;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #FDF8EE;
+      background-image: radial-gradient(#E5D6BE 1.25px, transparent 1.25px);
+      background-size: 22px 22px;
+      color: #292524;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Tombol Taktil 3D dengan Target Sentuh Minimal 44px */
+    .btn-tactile {
+      min-height: 44px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+    }
+    .btn-tactile:active {
+      transform: translateY(3px);
+    }
+
+    /* Kunci sentuhan pada kanvas agar layar HP Android tidak ikut tergulir saat menggambar */
+    .canvas-touch-lock {
+      touch-action: none;
+      overscroll-behavior: contain;
+    }
+
+    /* Bingkai Kertas Gambar Studio */
+    .artboard-frame {
+      background-color: #FFFFFF;
+      box-shadow: 0 10px 25px -5px rgba(120, 83, 45, 0.16), 0 0 0 5px #F3E5CE, 0 0 0 8px #D6B88D;
+    }
+
+    /* Animasi Mengambang Lembut */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: floatSlow 3.2s ease-in-out infinite;
+    }
+
+    /* Animasi Bintang Penghargaan */
+    @keyframes popStar {
+      0% { transform: scale(0.2) rotate(-25deg); opacity: 0; }
+      70% { transform: scale(1.22) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .star-pop {
+      animation: popStar 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Animasi Getar Saat PIN Salah */
+    @keyframes shakeBox {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-7px); }
+      80% { transform: translateX(7px); }
+    }
+    .animate-shake {
+      animation: shakeBox 0.4s ease-in-out;
+    }
+
+    /* Mode Fokus Kanvas untuk Layar HP Kecil */
+    body.focus-canvas-mode #main-app-header,
+    body.focus-canvas-mode #student-nav-tabs,
+    body.focus-canvas-mode #teacher-banner-bar {
+      display: none !important;
+    }
+
+    /* Scrollbar Rapi */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F5EBDD;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D6B88D;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-20 lg:pb-4">
+
+  <!-- =====================================================================
+       KANVAS CONFETTI PERAYAAN & TOAST NOTIFIKASI
+  ====================================================================== -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <div id="toast-banner" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-stone-900/95 text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-sm flex items-center gap-2.5 border-2 border-amber-400 max-w-[92vw]">
+    <span id="toast-icon">✨</span>
+    <span id="toast-text">Pesan notifikasi</span>
+  </div>
+
+  <!-- Tombol Keluar Mode Fokus Kanvas (Muncul hanya saat Focus Mode aktif) -->
+  <button id="btn-exit-focus" onclick="toggleFocusMode()" class="hidden fixed top-3 right-3 z-40 btn-tactile px-4 py-2 rounded-2xl bg-amber-400 text-amber-950 font-display font-bold text-xs sm:text-sm border-b-4 border-amber-600 shadow-lg flex items-center gap-1.5">
+    <span>🔙</span> <span>Tampilkan Menu</span>
+  </button>
+
+  <!-- =====================================================================
+       LAYAR 1: HALAMAN LOGIN SISWA KELAS 4B SD NEGERI TAMBAKREJO
+  ====================================================================== -->
+  <section id="screen-login" class="flex-1 flex items-center justify-center p-3 sm:p-6">
+    <div class="max-w-2xl w-full bg-white/95 rounded-3xl p-5 sm:p-8 border-4 border-amber-300 shadow-2xl relative">
+      <!-- Bar Atas Kartu Login: Identitas Sekolah & Tombol Panel Guru -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b-2 border-amber-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-500 via-amber-400 to-sky-500 flex items-center justify-center text-white text-2xl shadow-md border-2 border-white">
+            🎨
+          </div>
+          <div>
+            <span class="inline-block text-[11px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">
+              SD Negeri Tambakrejo • Kelas 4B
+            </span>
+            <p class="text-xs sm:text-sm font-bold text-stone-600 mt-0.5">
+              Guru Pengampu: <strong class="text-rose-700">Ibu Dian Lestari</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- Tombol Panel Guru -->
+        <button onclick="openTeacherPinModal()" class="btn-tactile px-3.5 py-2 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-display font-bold text-xs sm:text-sm border-2 border-indigo-300 border-b-4 flex items-center gap-1.5 shadow-sm">
+          <span>👩‍🏫</span> <span>Panel Guru</span>
+        </button>
+      </div>
+
+      <!-- Pengumuman Tugas Hari Ini dari Ibu Dian Lestari (Jika Ada) -->
+      <div id="login-announcement-box" class="hidden mb-5 bg-gradient-to-r from-amber-50 via-rose-50 to-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 flex items-start gap-3">
+        <span class="text-2xl shrink-0">📢</span>
+        <div>
+          <p class="text-xs font-extrabold text-amber-900 uppercase tracking-wide">Pesan Tugas Hari Ini dari Ibu Dian Lestari:</p>
+          <p id="login-announcement-text" class="text-sm font-bold text-stone-800 mt-0.5 leading-snug"></p>
+        </div>
+      </div>
+
+      <!-- Judul Sambutan -->
+      <div class="text-center mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold text-amber-950 mb-1">Studio Seni Cilik Kelas 4B</h1>
+        <p class="text-xs sm:text-sm text-stone-600 font-semibold">
+          Isi nama dan nomor absenmu untuk mulai mewarnai, menyusun bentuk, dan memajang karyamu di Galeri Kelas!
+        </p>
+      </div>
+
+      <!-- Formulir Login Siswa -->
+      <form id="student-login-form" onsubmit="handleStudentLogin(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label for="input-student-name" class="block text-xs font-extrabold text-stone-700 mb-1">
+              Nama Lengkap Siswa <span class="text-rose-500">*</span>
+            </label>
+            <input id="input-student-name" type="text" required maxlength="36" placeholder="Contoh: Raka Pratama"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-amber-300 focus:border-rose-500 focus:outline-none font-bold text-stone-800 bg-amber-50/40 text-base" />
+          </div>
+
+          <div>
+            <label for="input-student-absen" class="block text-xs font-extrabold text-stone-700 mb-1">
+              Nomor Absen <span class="text-rose-500">*</span>
+            </label>
+            <input id="input-student-absen" type="number" required min="1" max="45" placeholder="1 - 45"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-amber-300 focus:border-rose-500 focus:outline-none font-bold text-stone-800 bg-amber-50/40 text-base" />
+          </div>
+        </div>
+
+        <!-- Pilih Avatar Karakter Lucu -->
+        <div>
+          <label class="block text-xs font-extrabold text-stone-700 mb-2">Pilih Avatar Senimanmu:</label>
+          <div id="avatar-selector-grid" class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            <!-- Diisi otomatis oleh JavaScript -->
+          </div>
+        </div>
+
+        <button type="submit" class="w-full btn-tactile py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-display font-bold text-lg border-b-4 border-rose-700 shadow-lg flex items-center justify-center gap-2">
+          <span>🚀</span> <span>Masuk ke Studio Seni 4B</span>
+        </button>
+      </form>
+
+      <!-- Login Cepat Teman Kelas 4B yang Sudah Terdaftar -->
+      <div id="quick-login-section" class="hidden mt-6 pt-5 border-t-2 border-amber-100">
+        <div class="flex items-center justify-between mb-2.5">
+          <p class="text-xs font-extrabold text-stone-700">⚡ Login Cepat Siswa Terdaftar Kelas 4B:</p>
+          <span id="sync-status-pill" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">● Tersinkron</span>
+        </div>
+        <div id="quick-login-list" class="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+          <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       LAYAR 2: RUANG UTAMA STUDIO SENI (SETELAH SISWA LOGIN)
+  ====================================================================== -->
+  <div id="screen-studio" class="hidden flex-1 flex flex-col">
+    <!-- HEADER NAVIGASI STUDIO -->
+    <header id="main-app-header" class="bg-amber-50/95 backdrop-blur-sm border-b-4 border-amber-200 px-3 sm:px-5 py-2 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <!-- Identitas Sekolah & Siswa Aktif -->
+        <div class="flex items-center gap-2.5">
+          <div id="header-student-avatar" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-200 border-2 border-amber-400 flex items-center justify-center text-2xl shadow-sm">
+            🎨
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span id="header-student-name" class="font-display font-bold text-sm sm:text-base text-stone-900">Siswa 4B</span>
+              <span id="header-student-absen" class="text-[11px] font-extrabold bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full border border-sky-300">Absen -</span>
+              <span id="header-student-stars" class="text-[11px] font-extrabold bg-amber-200 text-amber-950 px-2 py-0.5 rounded-full">⭐ 0</span>
+            </div>
+            <p class="text-[11px] font-bold text-stone-600">
+              SD Negeri Tambakrejo • Kelas 4B • Guru: <strong class="text-rose-700">Ibu Dian Lestari</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- Tombol Utilitas Header (Android Fullscreen, Fokus Kanvas, Panel Guru, Ganti Siswa) -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="toggleFocusMode()" class="btn-tactile px-2.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs border border-amber-300 flex items-center gap-1" title="Perluas Area Gambar di HP">
+            <span>🔍</span> <span class="hidden sm:inline">Fokus Kanvas</span>
+          </button>
+
+          <button onclick="toggleFullscreen()" class="btn-tactile px-2.5 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold text-xs border border-sky-300 flex items-center gap-1" title="Layar Penuh">
+            <span>⛶</span> <span class="hidden md:inline">Layar Penuh</span>
+          </button>
+
+          <button onclick="openTeacherPinModal()" class="btn-tactile px-2.5 py-1.5 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-bold text-xs border border-indigo-300 flex items-center gap-1" title="Panel Khusus Ibu Dian Lestari">
+            <span>👩‍🏫</span> <span class="hidden sm:inline">Panel Guru</span>
+          </button>
+
+          <button id="btn-sound-toggle" onclick="toggleSound()" class="btn-tactile px-2.5 py-1.5 rounded-xl bg-white hover:bg-stone-100 text-stone-700 font-bold text-xs border border-stone-300" title="Suara Efek">
+            🔊
+          </button>
+
+          <button onclick="logoutStudent()" class="btn-tactile px-2.5 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs border border-rose-300 flex items-center gap-1" title="Ganti Siswa">
+            <span>🔄</span> <span class="hidden sm:inline">Ganti Siswa</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- BANNER PENGUMUMAN TUGAS DARI IBU DIAN LESTARI -->
+    <div id="teacher-banner-bar" class="hidden bg-gradient-to-r from-amber-100 via-rose-100 to-amber-100 border-b-2 border-amber-300 px-4 py-2">
+      <div class="max-w-7xl mx-auto flex items-center gap-2 text-xs sm:text-sm font-bold text-stone-800">
+        <span class="text-lg shrink-0">📢</span>
+        <span class="text-rose-800 font-extrabold shrink-0">Tugas Ibu Dian:</span>
+        <span id="studio-announcement-text" class="truncate"></span>
+      </div>
+    </div>
+
+    <!-- TAB NAVIGASI 5 MENU UTAMA KELAS 4B -->
+    <nav id="student-nav-tabs" class="bg-white border-b-2 border-amber-200 px-3 py-2 shadow-sm">
+      <div class="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2 overflow-x-auto">
+        <button onclick="switchStudioTab('coloring')" id="nav-tab-coloring" class="btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap bg-rose-500 text-white border-b-4 border-rose-700 flex items-center gap-1.5">
+          <span>🎨</span> <span>1. Mewarnai Gambar</span>
+        </button>
+
+        <button onclick="switchStudioTab('compose')" id="nav-tab-compose" class="btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap bg-amber-50 text-stone-700 border-2 border-amber-200 flex items-center gap-1.5">
+          <span>🧩</span> <span>2. Susun &amp; Warnai</span>
+        </button>
+
+        <button onclick="switchStudioTab('gallery')" id="nav-tab-gallery" class="btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap bg-amber-50 text-stone-700 border-2 border-amber-200 flex items-center gap-1.5">
+          <span>🖼️</span> <span>Galeri Kelas 4B</span>
+          <span id="badge-class-gallery" class="bg-indigo-600 text-white text-[11px] font-extrabold px-2 py-0.2 rounded-full">0</span>
+        </button>
+
+        <button onclick="switchStudioTab('leaderboard')" id="nav-tab-leaderboard" class="btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap bg-amber-50 text-stone-700 border-2 border-amber-200 flex items-center gap-1.5">
+          <span>🏆</span> <span>Papan Peringkat</span>
+        </button>
+
+        <button onclick="switchStudioTab('myworks')" id="nav-tab-myworks" class="btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap bg-amber-50 text-stone-700 border-2 border-amber-200 flex items-center gap-1.5">
+          <span>📁</span> <span>Karyaku</span>
+          <span id="badge-my-works" class="bg-emerald-600 text-white text-[11px] font-extrabold px-2 py-0.2 rounded-full">0</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ===================================================================
+         SUB-LAYAR A: MODE 1 — MEWARNAI GAMBAR (DUAL-LAYER CANVAS + LAB WARNA)
+    ==================================================================== -->
+    <main id="tab-view-coloring" class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-5 py-3 flex flex-col gap-3">
+      <!-- Bar Atas: Pilih Template & Tombol Kumpulkan ke Ibu Dian -->
+      <div class="bg-white rounded-2xl p-2.5 border-2 border-amber-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
+        <div id="coloring-template-tabs" class="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+
+        <button onclick="submitArtwork('coloring')" class="btn-tactile ml-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold text-xs sm:text-sm border-b-4 border-emerald-700 shadow-sm flex items-center gap-1.5 shrink-0">
+          <span>⭐</span> <span>Kirim &amp; Nilai Karyaku!</span>
+        </button>
+      </div>
+
+      <!-- Area Kerja Utama -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- Kolom Kanvas 2-Lapis (7 Kolom) -->
+        <div class="lg:col-span-7 flex flex-col gap-2.5">
+          <!-- Kotak Tips Ibu Dian -->
+          <div class="bg-amber-100/90 border-2 border-amber-300 rounded-2xl px-3.5 py-2 flex items-center gap-2.5">
+            <span class="text-xl shrink-0">👩‍🏫</span>
+            <p id="coloring-tip-text" class="text-xs sm:text-sm font-bold text-amber-950 leading-snug">
+              Pilih warna di palet, lalu ketuk bagian gambar untuk mewarnainya!
+            </p>
+          </div>
+
+          <!-- Bingkai Kanvas 2-Lapis (Lapisan Bawah: Warna Piksel | Lapisan Atas: Garis Hitam Anti-Hapus) -->
+          <div class="artboard-frame rounded-2xl p-2 sm:p-3 flex items-center justify-center relative overflow-hidden">
+            <div class="relative w-full aspect-[800/560] max-h-[60vh] bg-white rounded-xl overflow-hidden">
+              <canvas id="coloring-paint-canvas" width="800" height="560" class="absolute inset-0 w-full h-full canvas-touch-lock cursor-crosshair"></canvas>
+              <canvas id="coloring-outline-canvas" width="800" height="560" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+            </div>
+          </div>
+
+          <!-- Bar Alat Desktop/Tablet -->
+          <div class="bg-white rounded-2xl p-2.5 border-2 border-stone-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button id="tool-fill" onclick="setColoringTool('fill')" class="btn-tactile px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border-2 flex items-center gap-1.5 bg-rose-500 text-white border-rose-600">
+                <span>🪣</span> <span>Ember Cat</span>
+              </button>
+              <button id="tool-brush" onclick="setColoringTool('brush')" class="btn-tactile px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border-2 flex items-center gap-1.5 bg-stone-100 text-stone-700 border-stone-300">
+                <span>🖌️</span> <span>Kuas Hias</span>
+              </button>
+              <button id="tool-eraser" onclick="setColoringTool('eraser')" class="btn-tactile px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border-2 flex items-center gap-1.5 bg-stone-100 text-stone-700 border-stone-300">
+                <span>🧽</span> <span>Penghapus</span>
+              </button>
+            </div>
+
+            <!-- Pilihan Ukuran Kuas -->
+            <div id="brush-size-controls" class="hidden items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
+              <span class="text-xs font-bold text-amber-900">Ukuran:</span>
+              <button onclick="setBrushSize(6)" id="bsize-6" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-stone-700">Kecil</button>
+              <button onclick="setBrushSize(14)" id="bsize-14" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-400 text-amber-950">Sedang</button>
+              <button onclick="setBrushSize(26)" id="bsize-26" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-stone-700">Besar</button>
+            </div>
+
+            <!-- Undo & Bersihkan -->
+            <div class="flex items-center gap-1.5 ml-auto">
+              <button onclick="undoColoring()" class="btn-tactile px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs sm:text-sm border border-amber-300">
+                ↩️ Undo
+              </button>
+              <button onclick="confirmClearColoring()" class="btn-tactile px-3 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs sm:text-sm border border-rose-300">
+                🗑️ Bersihkan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kolom Palet Warna & Lab Pencampur Warna Primer (5 Kolom) -->
+        <div class="lg:col-span-5 flex flex-col gap-3">
+          <!-- Palet Warna -->
+          <div class="bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-amber-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2.5">
+              <h3 class="font-display font-bold text-base sm:text-lg text-stone-800">🎨 Palet Warna Seni Rupa</h3>
+              <div class="flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
+                <span class="text-xs font-bold text-stone-600">Aktif:</span>
+                <span id="active-color-dot" class="w-5 h-5 rounded-full border-2 border-stone-700 inline-block" style="background-color: #EF4444;"></span>
+                <span id="active-color-name" class="text-xs font-extrabold text-stone-800">Merah</span>
+              </div>
+            </div>
+
+            <div id="coloring-palette-container" class="space-y-3">
+              <!-- Diisi otomatis oleh JavaScript -->
+            </div>
+          </div>
+
+          <!-- Lab Pencampur Warna Primer & Pastel -->
+          <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-3.5 sm:p-4 border-2 border-indigo-200 shadow-sm">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-display font-bold text-base text-indigo-950 flex items-center gap-1.5">
+                <span>🧪</span> <span>Lab Pencampur Warna Primer</span>
+              </h3>
+              <button onclick="resetMixer()" class="text-xs font-extrabold text-indigo-600 hover:underline px-2 py-1">Reset</button>
+            </div>
+            <!-- 5 Tabung Warna Dasar -->
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+              <button onclick="addMixColor('#EF4444', 'Merah')" class="btn-tactile px-2 py-2 rounded-xl bg-red-500 text-white font-bold text-xs border-b-4 border-red-700 shadow-sm">
+                + Merah
+              </button>
+              <button onclick="addMixColor('#FACC15', 'Kuning')" class="btn-tactile px-2 py-2 rounded-xl bg-yellow-400 text-yellow-950 font-bold text-xs border-b-4 border-yellow-600 shadow-sm">
+                + Kuning
+              </button>
+              <button onclick="addMixColor('#2563EB', 'Biru')" class="btn-tactile px-2 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs border-b-4 border-blue-800 shadow-sm">
+                + Biru
+              </button>
+              <button onclick="addMixColor('#FFFFFF', 'Putih')" class="btn-tactile px-2 py-2 rounded-xl bg-white text-stone-800 font-bold text-xs border-2 border-stone-300 border-b-4 shadow-sm">
+                + Putih
+              </button>
+              <button onclick="addMixColor('#1E293B', 'Hitam')" class="btn-tactile px-2 py-2 rounded-xl bg-slate-800 text-white font-bold text-xs border-b-4 border-slate-950 shadow-sm">
+                + Hitam
+              </button>
+            </div>
+
+            <!-- Mangkuk Visual Campuran & Tombol Campur Warna -->
+            <div class="bg-white/95 rounded-2xl p-3 border border-indigo-200 flex flex-wrap items-center justify-around gap-2">
+              <div class="flex flex-col items-center">
+                <div id="mix-slot-1" class="w-11 h-11 rounded-full border-2 border-dashed border-stone-400 bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-400">1</div>
+                <span id="mix-label-1" class="text-[11px] font-bold text-stone-600 mt-1">Warna 1</span>
+              </div>
+              <span class="text-lg font-extrabold text-indigo-500">+</span>
+              <div class="flex flex-col items-center">
+                <div id="mix-slot-2" class="w-11 h-11 rounded-full border-2 border-dashed border-stone-400 bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-400">2</div>
+                <span id="mix-label-2" class="text-[11px] font-bold text-stone-600 mt-1">Warna 2</span>
+              </div>
+              <button type="button" onclick="mixSelectedColors()" class="btn-tactile px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-display font-bold text-xs border-b-4 border-indigo-800 shadow-sm">
+                🧪 Campur Warna!
+              </button>
+              <div class="flex flex-col items-center">
+                <div id="mix-result-bowl" class="w-12 h-12 rounded-full border-4 border-indigo-300 bg-stone-100 shadow-inner flex items-center justify-center text-xs font-bold text-stone-400">?</div>
+                <span id="mix-result-label" class="text-xs font-extrabold text-indigo-900 mt-1 text-center">Hasil</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===================================================================
+         SUB-LAYAR B: MODE 2 — SUSUN & WARNAI (GEOMETRIS & ORGANIS)
+    ==================================================================== -->
+    <main id="tab-view-compose" class="hidden flex-1 max-w-7xl w-full mx-auto px-3 sm:px-5 py-3 flex flex-col gap-3">
+      <!-- Bar Atas: Pilih Tema, Pola Bantu ON/OFF, & Kirim Karya -->
+      <div class="bg-white rounded-2xl p-2.5 border-2 border-sky-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
+        <div id="compose-theme-tabs" class="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 sm:pb-0">
+          <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="toggleComposeGuide()" class="btn-tactile px-3 py-2 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold text-xs sm:text-sm border border-sky-300 flex items-center gap-1">
+            <span>👁️</span> <span id="guide-toggle-label">Pola Bantu: ON</span>
+          </button>
+
+          <button onclick="submitArtwork('compose')" class="btn-tactile px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-display font-bold text-xs sm:text-sm border-b-4 border-emerald-700 shadow-sm flex items-center gap-1.5">
+            <span>⭐</span> <span>Kirim &amp; Nilai Karyaku!</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pengalih 2 Tahap Kerja: Susun Bentuk vs Warnai Karyamu -->
+      <div class="bg-gradient-to-r from-sky-100 via-amber-50 to-rose-100 rounded-2xl p-2 border-2 border-sky-200 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button id="step-btn-arrange" onclick="setComposeStep('arrange')" class="flex-1 sm:flex-initial btn-tactile px-4 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-sky-600 text-white border-b-4 border-sky-800 shadow-sm">
+            1️⃣ Tahap 1: Susun Bentuk
+          </button>
+          <button id="step-btn-color" onclick="setComposeStep('color')" class="flex-1 sm:flex-initial btn-tactile px-4 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-white text-stone-700 border-2 border-stone-300">
+            2️⃣ Tahap 2: Warnai Karyamu
+          </button>
+        </div>
+
+        <p id="compose-tip-text" class="text-xs sm:text-sm font-bold text-sky-950 text-center sm:text-right px-2">
+          Ketuk bentuk di rak kanan untuk menambahkannya ke kanvas, lalu seret &amp; atur ukurannya!
+        </p>
+      </div>
+
+      <!-- Area Kerja Utama Mode 2 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <!-- Kolom Kanvas Komposisi (7 Kolom) -->
+        <div class="lg:col-span-7 flex flex-col gap-2.5">
+          <div class="artboard-frame rounded-2xl p-2 sm:p-3 flex items-center justify-center relative overflow-hidden">
+            <svg id="compose-svg" viewBox="0 0 800 560" class="w-full h-auto max-h-[60vh] rounded-xl bg-white canvas-touch-lock">
+              <rect id="compose-bg-rect" x="0" y="0" width="800" height="560" fill="#FFFFFF" />
+              <g id="compose-guide-layer" opacity="0.6"></g>
+              <g id="compose-shapes-layer"></g>
+              <g id="compose-selection-layer" pointer-events="none"></g>
+            </svg>
+          </div>
+
+          <!-- Bilah Kontrol Bentuk Terpilih -->
+          <div class="bg-white rounded-2xl p-2.5 border-2 border-stone-200 shadow-sm flex flex-wrap items-center justify-between gap-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button onclick="transformSelectedShape('rotateLeft')" class="btn-tactile px-2.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 font-bold text-xs border border-sky-300">
+                ↺ Putar
+              </button>
+              <button onclick="transformSelectedShape('rotateRight')" class="btn-tactile px-2.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 font-bold text-xs border border-sky-300">
+                ↻ Putar
+              </button>
+              <button onclick="transformSelectedShape('scaleDown')" class="btn-tactile px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs border border-amber-300">
+                ➖ Kecil
+              </button>
+              <button onclick="transformSelectedShape('scaleUp')" class="btn-tactile px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs border border-amber-300">
+                ➕ Besar
+              </button>
+              <button onclick="transformSelectedShape('bringForward')" class="btn-tactile px-2.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-300">
+                ⬆️ Maju
+              </button>
+              <button onclick="transformSelectedShape('sendBackward')" class="btn-tactile px-2.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-bold text-xs border border-indigo-300">
+                ⬇️ Mundur
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5 ml-auto">
+              <button onclick="duplicateSelectedShape()" class="btn-tactile px-2.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300">
+                📑 Duplikat
+              </button>
+              <button onclick="deleteSelectedShape()" class="btn-tactile px-2.5 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs border border-rose-300">
+                🗑️ Hapus
+              </button>
+              <button onclick="confirmClearCompose()" class="btn-tactile px-2.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300">
+                🧹 Kosongkan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kolom Rak Bentuk & Palet Warna (5 Kolom) -->
+        <div class="lg:col-span-5 flex flex-col gap-3">
+          <div class="bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-sky-200 shadow-sm">
+            <h3 class="font-display font-bold text-base sm:text-lg text-sky-950 mb-1">
+              🔷 Rak Bentuk (Geometris &amp; Organis)
+            </h3>
+            <p class="text-xs text-stone-600 mb-3">
+              Ketuk bentuk untuk menambahkannya ke kanvas. Gunakan <strong>Tahap 1</strong> untuk menyusun dan <strong>Tahap 2</strong> untuk mewarnai tanpa menggeser!
+            </p>
+            <div id="shape-tray-grid" class="grid grid-cols-4 lg:grid-cols-4 gap-2">
+              <!-- Diisi otomatis oleh JavaScript -->
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-rose-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-display font-bold text-base sm:text-lg text-rose-950">🎨 Palet Warna Bentuk</h3>
+              <div class="flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-full border border-stone-200">
+                <span id="compose-active-color-dot" class="w-4 h-4 rounded-full border border-stone-700 inline-block" style="background-color: #EF4444;"></span>
+                <span id="compose-active-color-name" class="text-xs font-extrabold text-stone-800">Merah</span>
+              </div>
+            </div>
+
+            <div id="compose-palette-container" class="space-y-2.5 mb-3">
+              <!-- Diisi otomatis oleh JavaScript -->
+            </div>
+
+            <!-- Warna Kertas Latar -->
+            <div class="pt-2.5 border-t border-stone-200 flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-stone-700">Warna Latar Kertas:</span>
+              <div class="flex items-center gap-2">
+                <button onclick="setComposeBackground('#FFFFFF')" class="w-7 h-7 rounded-full bg-white border-2 border-stone-400" title="Putih"></button>
+                <button onclick="setComposeBackground('#E0F2FE')" class="w-7 h-7 rounded-full bg-sky-100 border-2 border-sky-400" title="Langit Cerah"></button>
+                <button onclick="setComposeBackground('#FEF3C7')" class="w-7 h-7 rounded-full bg-amber-100 border-2 border-amber-400" title="Krem Hangat"></button>
+                <button onclick="setComposeBackground('#DCFCE7')" class="w-7 h-7 rounded-full bg-emerald-100 border-2 border-emerald-400" title="Padang Hijau"></button>
+                <button onclick="setComposeBackground('#1E293B')" class="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-500" title="Langit Malam"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===================================================================
+         SUB-LAYAR C: GALERI KELAS 4B (LIHAT & APRESIASI KARYA TEMAN)
+    ==================================================================== -->
+    <main id="tab-view-gallery" class="hidden flex-1 max-w-7xl w-full mx-auto px-3 sm:px-5 py-4 flex flex-col gap-4">
+      <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-indigo-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-indigo-950">🖼️ Pameran Galeri Kelas 4B SD Negeri Tambakrejo</h2>
+          <p class="text-xs sm:text-sm text-stone-600 font-semibold">
+            Lihat hasil gambar teman-teman sekelasmu dan berikan reaksi apresiasi yang positif!
+          </p>
+        </div>
+
+        <!-- Filter Galeri -->
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="gallery-filter-mode" onchange="renderClassGallery()" class="px-3 py-2 rounded-xl border-2 border-indigo-200 bg-indigo-50/60 font-bold text-xs sm:text-sm text-indigo-950 focus:outline-none">
+            <option value="all">Semua Kegiatan</option>
+            <option value="coloring">Mewarnai Gambar</option>
+            <option value="compose">Susun &amp; Warnai</option>
+          </select>
+
+          <input id="gallery-search-student" oninput="renderClassGallery()" type="text" placeholder="Cari nama teman..."
+            class="px-3 py-2 rounded-xl border-2 border-stone-200 font-bold text-xs sm:text-sm text-stone-800 focus:border-indigo-400 focus:outline-none w-40 sm:w-48" />
+        </div>
+      </div>
+
+      <div id="class-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Diisi otomatis oleh JavaScript -->
+      </div>
+    </main>
+
+    <!-- ===================================================================
+         SUB-LAYAR D: PAPAN PERINGKAT KELAS 4B
+    ==================================================================== -->
+    <main id="tab-view-leaderboard" class="hidden flex-1 max-w-5xl w-full mx-auto px-3 sm:px-5 py-4 flex flex-col gap-4">
+      <div class="bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 rounded-3xl p-4 sm:p-5 border-2 border-amber-300 shadow-sm text-center">
+        <h2 class="text-xl sm:text-2xl font-bold text-amber-950">🏆 Papan Peringkat Seniman Kelas 4B</h2>
+        <p class="text-xs sm:text-sm text-stone-700 font-semibold">
+          SD Negeri Tambakrejo • Diurutkan berdasarkan perolehan Bintang Emas &amp; Poin Kreativitas dari Ibu Dian Lestari
+        </p>
+      </div>
+
+      <!-- Podium Juara 1, 2, 3 -->
+      <div id="leaderboard-podium" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <!-- Diisi otomatis oleh JavaScript -->
+      </div>
+
+      <!-- Tabel Peringkat Lengkap -->
+      <div class="bg-white rounded-3xl border-2 border-amber-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-amber-100/80 text-amber-950 text-xs font-extrabold uppercase">
+                <th class="py-3 px-4">Peringkat</th>
+                <th class="py-3 px-4">Siswa Kelas 4B</th>
+                <th class="py-3 px-4 text-center">Karya</th>
+                <th class="py-3 px-4 text-center">Bintang</th>
+                <th class="py-3 px-4 text-right">Poin</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-table-body" class="divide-y divide-stone-100 text-sm font-bold">
+              <!-- Diisi otomatis oleh JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- ===================================================================
+         SUB-LAYAR E: KARYAKU (PORTOFOLIO PRIBADI & UNDUH PNG)
+    ==================================================================== -->
+    <main id="tab-view-myworks" class="hidden flex-1 max-w-7xl w-full mx-auto px-3 sm:px-5 py-4 flex flex-col gap-4">
+      <div class="bg-white rounded-3xl p-4 sm:p-5 border-2 border-emerald-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-emerald-950">📁 Portofolio Karyaku</h2>
+          <p class="text-xs sm:text-sm text-stone-600 font-semibold">
+            Kumpulan hasil gambar terbaikmu. Klik <strong>Unduh PNG</strong> untuk menyimpannya ke galeri HP/komputer!
+          </p>
+        </div>
+      </div>
+
+      <div id="my-works-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Diisi otomatis oleh JavaScript -->
+      </div>
+    </main>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 1: KUNCI PIN PANEL GURU IBU DIAN LESTARI (4 ANGKA TETAP)
+  ====================================================================== -->
+  <div id="modal-teacher-pin" class="hidden fixed inset-0 bg-stone-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div id="pin-modal-card" class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 border-4 border-indigo-300 shadow-2xl text-center relative">
+      <button onclick="closeTeacherPinModal()" class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-extrabold">✕</button>
+
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-100 text-indigo-800 flex items-center justify-center text-3xl mb-2 border-2 border-indigo-200">
+        👩‍🏫
+      </div>
+      <span id="pin-mode-badge" class="inline-block text-[11px] font-extrabold bg-indigo-100 text-indigo-800 px-3 py-0.5 rounded-full mb-1">
+        Akses Khusus Ibu Dian Lestari • Kelas 4B
+      </span>
+      <h2 id="pin-modal-title" class="text-xl sm:text-2xl font-bold text-indigo-950">Masukkan PIN Guru 4 Angka</h2>
+      <p id="pin-modal-subtitle" class="text-xs sm:text-sm text-stone-600 font-semibold mt-1 mb-4">
+        Masukkan 4 angka PIN rahasia guru untuk membuka Panel Guru.
+      </p>
+
+      <!-- 4 Titik Indikator Digit PIN -->
+      <div id="pin-dots-row" class="flex items-center justify-center gap-3.5 mb-2">
+        <span class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-white transition-all"></span>
+        <span class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-white transition-all"></span>
+        <span class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-white transition-all"></span>
+        <span class="pin-dot w-4 h-4 rounded-full border-2 border-indigo-400 bg-white transition-all"></span>
+      </div>
+
+      <p id="pin-feedback-msg" class="text-xs font-extrabold text-rose-600 min-h-[18px] mb-3"></p>
+
+      <!-- Keypad Angka Besar Ramah Sentuh HP Android (0-9) -->
+      <div class="grid grid-cols-3 gap-2.5 max-w-[260px] mx-auto">
+        <button type="button" onclick="pressPinDigit('1')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">1</button>
+        <button type="button" onclick="pressPinDigit('2')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">2</button>
+        <button type="button" onclick="pressPinDigit('3')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">3</button>
+        <button type="button" onclick="pressPinDigit('4')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">4</button>
+        <button type="button" onclick="pressPinDigit('5')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">5</button>
+        <button type="button" onclick="pressPinDigit('6')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">6</button>
+        <button type="button" onclick="pressPinDigit('7')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">7</button>
+        <button type="button" onclick="pressPinDigit('8')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">8</button>
+        <button type="button" onclick="pressPinDigit('9')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">9</button>
+        <button type="button" onclick="clearPinBuffer()" class="btn-tactile h-13 py-3 rounded-2xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-display font-bold text-sm border-2 border-rose-200">Hapus</button>
+        <button type="button" onclick="pressPinDigit('0')" class="btn-tactile h-13 py-3 rounded-2xl bg-stone-100 hover:bg-indigo-50 active:bg-indigo-100 text-stone-900 font-display font-bold text-xl border-2 border-stone-200">0</button>
+        <button type="button" onclick="backspacePinDigit()" class="btn-tactile h-13 py-3 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-display font-bold text-lg border-2 border-amber-200">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 2: PANEL GURU IBU DIAN LESTARI (3 TAB MANAJEMEN KELAS 4B)
+  ====================================================================== -->
+  <div id="modal-teacher-panel" class="hidden fixed inset-0 bg-stone-900/75 backdrop-blur-sm z-40 flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-3xl max-w-5xl w-full max-h-[92vh] flex flex-col border-4 border-indigo-300 shadow-2xl overflow-hidden">
+      <!-- Header Panel Guru -->
+      <div class="bg-indigo-950 text-white px-4 sm:px-6 py-4 flex items-center justify-between gap-2">
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-300">SD Negeri Tambakrejo • Kelas 4B</span>
+          <h2 class="text-xl sm:text-2xl font-bold">👩‍🏫 Panel Guru — Ibu Dian Lestari</h2>
+        </div>
+        <button onclick="closeTeacherPanel()" class="btn-tactile px-3.5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm">
+          Tutup Panel ✕
+        </button>
+      </div>
+
+      <!-- Tab Navigasi Panel Guru -->
+      <div class="bg-indigo-50 border-b-2 border-indigo-100 px-3 sm:px-5 py-2 flex items-center gap-1.5 overflow-x-auto shrink-0">
+        <button onclick="switchTeacherTab('summary')" id="gtab-summary" class="btn-tactile px-3.5 py-2 rounded-xl font-bold text-xs whitespace-nowrap bg-indigo-600 text-white">
+          📊 Ringkasan &amp; Tugas
+        </button>
+        <button onclick="switchTeacherTab('grades')" id="gtab-grades" class="btn-tactile px-3.5 py-2 rounded-xl font-bold text-xs whitespace-nowrap bg-white text-indigo-900 border border-indigo-200">
+          📋 Rekap Nilai Kelas 4B
+        </button>
+        <button onclick="switchTeacherTab('moderate')" id="gtab-moderate" class="btn-tactile px-3.5 py-2 rounded-xl font-bold text-xs whitespace-nowrap bg-white text-indigo-900 border border-indigo-200">
+          🖼️ Moderasi Galeri &amp; Reset
+        </button>
+      </div>
+
+      <!-- Konten Tab Panel Guru -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <!-- TAB 1: RINGKASAN KELAS, KAPASITAS & PAPAN PENGUMUMAN TUGAS -->
+        <div id="gview-summary" class="space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-sky-50 rounded-2xl p-4 border-2 border-sky-200">
+              <p class="text-xs font-extrabold text-sky-800 uppercase">Total Siswa Terdaftar</p>
+              <p id="stat-total-students" class="text-3xl font-display font-bold text-sky-950 mt-1">0</p>
+              <p class="text-xs text-sky-700 mt-0.5">Siswa Kelas 4B aktif</p>
+            </div>
+            <div class="bg-rose-50 rounded-2xl p-4 border-2 border-rose-200">
+              <p class="text-xs font-extrabold text-rose-800 uppercase">Total Karya di Galeri</p>
+              <p id="stat-total-artworks" class="text-3xl font-display font-bold text-rose-950 mt-1">0</p>
+              <p class="text-xs text-rose-700 mt-0.5">Mewarnai &amp; Susun Bentuk</p>
+            </div>
+            <div class="bg-amber-50 rounded-2xl p-4 border-2 border-amber-200">
+              <p class="text-xs font-extrabold text-amber-800 uppercase">Rata-Rata Bintang Emas</p>
+              <p id="stat-avg-stars" class="text-3xl font-display font-bold text-amber-950 mt-1">0.0 ⭐</p>
+              <p class="text-xs text-amber-700 mt-0.5">Dari skala 3 Bintang Emas</p>
+            </div>
+          </div>
+
+          <!-- Papan Pengumuman & Tugas Hari Ini -->
+          <div class="bg-amber-50 rounded-2xl p-4 sm:p-5 border-2 border-amber-200">
+            <h3 class="font-display font-bold text-lg text-amber-950 mb-1">📢 Papan Pengumuman &amp; Tugas Hari Ini</h3>
+            <p class="text-xs sm:text-sm text-stone-600 mb-3">
+              Pesan yang Ibu Dian tulis di sini akan langsung tampil di layar Login siswa dan di bagian atas ruang berkarya Kelas 4B.
+            </p>
+
+            <textarea id="teacher-announcement-input" rows="3" maxlength="220"
+              placeholder="Contoh: Anak-anak Kelas 4B, hari ini silakan pilih gambar Rumah Adat Gadang lalu campurkan warna primer menjadi warna sekunder ya!"
+              class="w-full p-3.5 rounded-2xl border-2 border-amber-300 focus:border-indigo-500 focus:outline-none font-bold text-sm text-stone-800 bg-white mb-3"></textarea>
+
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button onclick="saveTeacherAnnouncement()" class="btn-tactile px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-display font-bold text-sm border-b-4 border-indigo-800">
+                💾 Simpan &amp; Tayangkan Pengumuman
+              </button>
+              <button onclick="clearTeacherAnnouncement()" class="btn-tactile px-4 py-2.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-sm">
+                Hapus Pengumuman
+              </button>
+            </div>
+          </div>
+
+          <!-- Monitor Kapasitas Penyimpanan -->
+          <div class="bg-stone-50 rounded-2xl p-4 sm:p-5 border-2 border-stone-200">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <h3 class="font-display font-bold text-base text-stone-800">💾 Monitor Kapasitas Penyimpanan Galeri</h3>
+              <span id="storage-usage-label" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">0 KB terpakai</span>
+            </div>
+            <div class="w-full h-4 bg-stone-200 rounded-full overflow-hidden mb-2">
+              <div id="storage-usage-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 4%;"></div>
+            </div>
+            <p class="text-xs text-stone-600 leading-relaxed">
+              Setiap karya siswa berukuran sangat ringan (~40–90 KB). Jika galeri sudah penuh ratusan gambar saat pergantian tema pelajaran, Ibu Dian dapat mengunduh karya terbaik lalu membersihkan galeri pada tab <strong>Moderasi Galeri &amp; Reset</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- TAB 2: REKAP NILAI KELAS 4B & UNDUH CSV -->
+        <div id="gview-grades" class="hidden space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-display font-bold text-lg text-stone-800">📋 Rekapitulasi Nilai Seni Rupa Kelas 4B</h3>
+              <p class="text-xs text-stone-600">Diurutkan berdasarkan Nomor Absen siswa SD Negeri Tambakrejo.</p>
+            </div>
+            <button onclick="downloadGradesCSV()" class="btn-tactile px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold text-xs sm:text-sm border-b-4 border-emerald-800 flex items-center gap-1.5">
+              <span>📥</span> <span>Unduh Rekap Nilai (CSV)</span>
+            </button>
+          </div>
+
+          <div class="border-2 border-stone-200 rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-indigo-50 text-indigo-950 text-xs font-extrabold uppercase">
+                    <th class="py-3 px-3">Absen</th>
+                    <th class="py-3 px-3">Nama Siswa</th>
+                    <th class="py-3 px-3 text-center">Jumlah Karya</th>
+                    <th class="py-3 px-3 text-center">Total Bintang</th>
+                    <th class="py-3 px-3 text-center">Total Poin</th>
+                    <th class="py-3 px-3">Predikat</th>
+                  </tr>
+                </thead>
+                <tbody id="teacher-grades-tbody" class="divide-y divide-stone-100 text-xs sm:text-sm font-bold">
+                  <!-- Diisi otomatis oleh JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: MODERASI GALERI & RESET DATA -->
+        <div id="gview-moderate" class="hidden space-y-5">
+          <!-- Tombol Reset Tingkat Kelas -->
+          <div class="bg-rose-50 rounded-2xl p-4 border-2 border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="font-display font-bold text-base text-rose-950">🧹 Bersihkan Data Pergantian Materi / Semester</h3>
+              <p class="text-xs text-rose-800">Gunakan tombol ini saat berganti tema gambar atau memasuki tahun ajaran baru.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="confirmTeacherClearGallery()" class="btn-tactile px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs border-b-4 border-amber-700">
+                🗑️ Bersihkan Galeri
+              </button>
+              <button onclick="confirmTeacherResetAll()" class="btn-tactile px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs border-b-4 border-rose-800">
+                ⚠️ Reset Data Semester
+              </button>
+            </div>
+          </div>
+
+          <!-- Daftar Karya untuk Moderasi Individual -->
+          <div>
+            <h4 class="font-display font-bold text-base text-stone-800 mb-2.5">Daftar Karya di Galeri Kelas 4B</h4>
+            <div id="teacher-moderate-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <!-- Diisi otomatis oleh JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL ZOOM PRATINJAU KARYA DI GALERI KELAS 4B
+  ====================================================================== -->
+  <div id="modal-artwork-zoom" class="hidden fixed inset-0 bg-stone-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeArtworkZoomModal()">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-5 border-4 border-indigo-300 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span id="zoom-avatar" class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-2xl shrink-0">🎨</span>
+          <div class="min-w-0">
+            <h3 id="zoom-title" class="font-display font-bold text-base sm:text-lg text-indigo-950 truncate">Judul Karya</h3>
+            <p id="zoom-meta" class="text-xs font-bold text-stone-600 truncate">Nama Siswa • Kelas 4B</p>
+          </div>
+        </div>
+        <button onclick="closeArtworkZoomModal()" class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-extrabold shrink-0">✕</button>
+      </div>
+      <div class="bg-stone-100 rounded-2xl p-2 border border-stone-200 flex items-center justify-center">
+        <img id="zoom-image" src="" alt="Perbesar Karya" class="max-h-[65vh] w-auto rounded-xl bg-white" />
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 3: HASIL PENILAIAN IBU DIAN LESTARI & PERAYAAN BINTANG
+  ====================================================================== -->
+  <div id="modal-result" class="hidden fixed inset-0 bg-stone-900/70 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 border-4 border-amber-300 shadow-2xl text-center">
+      <span class="inline-block bg-amber-100 text-amber-900 font-extrabold text-xs px-3 py-1 rounded-full mb-2 border border-amber-300">
+        👩‍🏫 Penilaian Ibu Dian Lestari • Kelas 4B
+      </span>
+      <h2 id="result-title" class="text-2xl sm:text-3xl font-bold text-stone-800 mb-1">Karya Luar Biasa!</h2>
+
+      <div id="result-stars" class="flex items-center justify-center gap-3 my-2 text-5xl"></div>
+      <p id="result-points-badge" class="inline-block bg-emerald-100 text-emerald-800 font-extrabold text-xs px-3 py-1 rounded-full mb-3">+150 Poin Kreativitas</p>
+
+      <div class="bg-amber-50/80 rounded-2xl p-2 border-2 border-amber-200 mb-3 flex items-center justify-center">
+        <img id="result-preview-img" src="" alt="Preview Karya Siswa" class="max-h-44 w-auto rounded-xl shadow-sm" />
+      </div>
+
+      <p id="result-feedback" class="text-xs sm:text-sm text-stone-700 font-bold leading-relaxed mb-4"></p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+        <button onclick="downloadLastResultPNG()" class="w-full sm:w-auto btn-tactile px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-display font-bold text-sm border-b-4 border-sky-800 flex items-center justify-center gap-1.5">
+          <span>📥</span> <span>Unduh PNG</span>
+        </button>
+        <button onclick="closeResultAndViewGallery()" class="w-full sm:w-auto btn-tactile px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-display font-bold text-sm border-b-4 border-indigo-800">
+          🖼️ Lihat di Galeri 4B
+        </button>
+        <button onclick="closeResultModal()" class="w-full sm:w-auto btn-tactile px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-display font-bold text-sm border-b-4 border-amber-600">
+          Lanjut Berkarya
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL 4: KONFIRMASI KUSTOM 2-LANGKAH (PENGGANTI ALERT/CONFIRM)
+  ====================================================================== -->
+  <div id="modal-confirm" class="hidden fixed inset-0 bg-stone-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-4 border-rose-300 shadow-2xl text-center">
+      <div class="text-4xl mb-2">🤔</div>
+      <h3 id="confirm-title" class="font-display font-bold text-xl text-stone-800 mb-1.5">Konfirmasi</h3>
+      <p id="confirm-message" class="text-sm text-stone-600 font-semibold mb-5">Apakah Anda yakin?</p>
+      <div class="flex items-center justify-center gap-3">
+        <button onclick="closeConfirmModal()" class="flex-1 btn-tactile py-2.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-sm">
+          Batal
+        </button>
+        <button id="confirm-yes-btn" class="flex-1 btn-tactile py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm border-b-4 border-rose-700">
+          Ya, Lanjutkan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       STICKY BOTTOM DOCK KHUSUS LAYAR HP ANDROID
+  ====================================================================== -->
+  <div id="mobile-bottom-dock" class="hidden lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t-2 border-amber-300 px-2.5 py-2 shadow-2xl">
+    <!-- Dock Mode 1: Mewarnai -->
+    <div id="mobile-dock-coloring" class="flex items-center gap-1.5">
+      <button id="mdock-fill" type="button" onclick="setColoringTool('fill')" class="w-11 h-11 rounded-xl bg-rose-500 text-white font-bold text-lg flex items-center justify-center shadow-sm shrink-0" title="Ember Cat">🪣</button>
+      <button id="mdock-brush" type="button" onclick="setColoringTool('brush')" class="w-11 h-11 rounded-xl bg-stone-100 text-stone-700 font-bold text-lg flex items-center justify-center border border-stone-300 shrink-0" title="Kuas Hias">🖌️</button>
+      <button id="mdock-eraser" type="button" onclick="setColoringTool('eraser')" class="w-11 h-11 rounded-xl bg-stone-100 text-stone-700 font-bold text-lg flex items-center justify-center border border-stone-300 shrink-0" title="Penghapus">🧽</button>
+      <button type="button" onclick="undoColoring()" class="w-11 h-11 rounded-xl bg-amber-100 text-amber-900 font-bold text-base flex items-center justify-center border border-amber-300 shrink-0" title="Undo">↩️</button>
+      <div id="mobile-color-strip" class="flex items-center gap-1.5 overflow-x-auto py-0.5 pl-1 border-l-2 border-amber-200"></div>
+    </div>
+
+    <!-- Dock Mode 2: Susun & Warnai -->
+    <div id="mobile-dock-compose" class="hidden flex items-center gap-1.5">
+      <button id="mdock-step-arrange" type="button" onclick="setComposeStep('arrange')" class="flex-1 h-11 rounded-xl bg-sky-600 text-white font-display font-bold text-xs flex items-center justify-center gap-1">
+        <span>1️⃣</span> <span>Susun</span>
+      </button>
+      <button id="mdock-step-color" type="button" onclick="setComposeStep('color')" class="flex-1 h-11 rounded-xl bg-stone-100 text-stone-700 font-display font-bold text-xs border border-stone-300 flex items-center justify-center gap-1">
+        <span>2️⃣</span> <span>Warnai</span>
+      </button>
+      <button type="button" onclick="transformSelectedShape('rotateRight')" class="w-11 h-11 rounded-xl bg-sky-50 text-sky-900 font-bold text-base border border-sky-300 flex items-center justify-center shrink-0" title="Putar">↻</button>
+      <button type="button" onclick="deleteSelectedShape()" class="w-11 h-11 rounded-xl bg-rose-100 text-rose-800 font-bold text-base border border-rose-300 flex items-center justify-center shrink-0" title="Hapus">🗑️</button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       LOGIKA FIREBASE REAL-TIME + FALLBACK OFFLINE + GAME ENGINE
+  ====================================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    /**
+     * =====================================================================
+     * 1. INISIALISASI CLOUD DATABASE (FIRESTORE) & PENYIMPANAN LOKAL
+     * =====================================================================
+     */
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'sdn-tambakrejo-4b-studio-seni';
+    const LOCAL_KEYS = {
+      config: 'studio_4b_class_config_v2',
+      students: 'studio_4b_students_v2',
+      artworks: 'studio_4b_artworks_v2',
+      session: 'studio_4b_active_student_v2'
+    };
+
+    let db = null;
+    let auth = null;
+    let firebaseUser = null;
+    let isCloudConnected = false;
+
+    // Muat data awal dari localStorage agar langsung responsif sejak detik pertama
+    function loadLocalJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function saveLocalJSON(key, val) {
+      try {
+        localStorage.setItem(key, JSON.stringify(val));
+      } catch (e) {
+        // Abaikan jika kapasitas localStorage penuh
+      }
+    }
+
+    /**
+     * =====================================================================
+     * 2. STATE GLOBAL APLIKASI
+     * =====================================================================
+     */
+    const FIXED_TEACHER_PIN = '2023';
+
+    const AVATARS = [
+      { id: 'cat', icon: '🐱', label: 'Kucing Pelukis' },
+      { id: 'bunny', icon: '🐰', label: 'Kelinci Ceria' },
+      { id: 'bear', icon: '🐻', label: 'Beruang Seniman' },
+      { id: 'fox', icon: '🦊', label: 'Rubah Kreatif' },
+      { id: 'panda', icon: '🐼', label: 'Panda Pintar' },
+      { id: 'owl', icon: '🦉', label: 'Burung Hantu' },
+      { id: 'lion', icon: '🦁', label: 'Singa Pemberani' },
+      { id: 'dolphin', icon: '🐬', label: 'Lumba-lumba' }
+    ];
+
+    const state = {
+      selectedAvatar: AVATARS[0].icon,
+      currentStudent: loadLocalJSON(LOCAL_KEYS.session, null),
+      classConfig: loadLocalJSON(LOCAL_KEYS.config, {
+        announcement: ''
+      }),
+      studentsMap: loadLocalJSON(LOCAL_KEYS.students, {}), // { studentKey: { key, name, absen, avatar, stars, points, artworksCount } }
+      artworksList: loadLocalJSON(LOCAL_KEYS.artworks, []), // Array karya kelas
+      activeTab: 'coloring',
+      lastResultDataUrl: '',
+      lastResultTitle: '',
+      lastResultStars: 3,
+
+      // State PIN Modal (Hanya Mode Buka Kunci)
+      pinModal: {
+        buffer: ''
+      },
+
+      // State Mode 1: Mewarnai 2-Lapis
+      coloring: {
+        templateIndex: 0,
+        tool: 'fill',
+        selectedColor: '#EF4444',
+        selectedColorName: 'Merah',
+        brushSize: 14,
+        history: [],
+        mixSlots: [],
+        unlockedColors: [] // Warna hasil campuran yang dibuka siswa
+      },
+
+      // State Mode 2: Susun & Warnai
+      compose: {
+        themeIndex: 0,
+        showGuide: true,
+        step: 'arrange',
+        selectedColor: '#EF4444',
+        selectedColorName: 'Merah',
+        bgColor: '#FFFFFF',
+        shapes: [],
+        selectedUid: null,
+        draggingUid: null,
+        dragOffsetX: 0,
+        dragOffsetY: 0
+      }
+    };
+
+    /**
+     * Koneksi ke Firebase Auth & Firestore (Dengan Rule 1, Rule 2, Rule 3 ketat)
+     */
+    async function initCloudSync() {
+      try {
+        if (typeof __firebase_config === 'undefined') {
+          updateSyncBadge(false);
+          return;
+        }
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // RULE 3: Authenticate FIRST before any Firestore query
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          const cred = await signInWithCustomToken(auth, __initial_auth_token);
+          firebaseUser = cred.user;
+        } else {
+          const cred = await signInAnonymously(auth);
+          firebaseUser = cred.user;
+        }
+
+        if (!firebaseUser) return;
+        isCloudConnected = true;
+        updateSyncBadge(true);
+
+        // Listener 1: Pengaturan Kelas & PIN Guru (Strict Path Rule 1)
+        // Listener 1: Pengaturan Pengumuman Kelas (Strict Path Rule 1)
+        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'classConfig');
+        onSnapshot(configRef, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            state.classConfig = {
+              announcement: data.announcement || ''
+            };
+            saveLocalJSON(LOCAL_KEYS.config, state.classConfig);
+            renderAnnouncementBanners();
+          }
+        }, (err) => {
+          console.warn('Firestore config listener fallback:', err.message);
+        });
+
+        // Listener 2: Daftar Siswa Kelas 4B (Simple collection query - Rule 2)
+        const studentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'students');
+        onSnapshot(studentsRef, (snapshot) => {
+          const map = {};
+          snapshot.forEach(docSnap => {
+            map[docSnap.id] = { key: docSnap.id, ...docSnap.data() };
+          });
+          state.studentsMap = map;
+          saveLocalJSON(LOCAL_KEYS.students, map);
+          syncCurrentStudentFromMap();
+          renderQuickLoginList();
+          renderLeaderboard();
+          updateTeacherStatsUI();
+        }, (err) => {
+          console.warn('Firestore students listener fallback:', err.message);
+        });
+
+        // Listener 3: Galeri Karya Kelas 4B (Simple collection query - Rule 2)
+        const artworksRef = collection(db, 'artifacts', appId, 'public', 'data', 'artworks');
+        onSnapshot(artworksRef, (snapshot) => {
+          const list = [];
+          snapshot.forEach(docSnap => {
+            list.push({ id: docSnap.id, ...docSnap.data() });
+          });
+          // Urutkan terbaru di memori JavaScript (Rule 2)
+          list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          state.artworksList = list;
+          saveLocalJSON(LOCAL_KEYS.artworks, list.slice(0, 24));
+          updateGalleryBadges();
+          renderClassGallery();
+          renderMyWorks();
+          updateTeacherStatsUI();
+        }, (err) => {
+          console.warn('Firestore artworks listener fallback:', err.message);
+        });
+      } catch (e) {
+        console.warn('Berjalan dalam mode lokal perangkat:', e);
+        updateSyncBadge(false);
+      }
+    }
+
+    function updateSyncBadge(online) {
+      const pill = document.getElementById('sync-status-pill');
+      if (!pill) return;
+      if (online) {
+        pill.textContent = '● Online Kelas 4B';
+        pill.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
+      } else {
+        pill.textContent = '● Mode Perangkat Lokal';
+        pill.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800';
+      }
+    }
+
+    /**
+     * =====================================================================
+     * 3. EFEK SUARA SINTETIS (WEB AUDIO API TANPA URL EKSTERNAL) & TOAST
+     * =====================================================================
+     */
+    const SoundFX = (() => {
+      let enabled = true;
+      let audioCtx = null;
+
+      function getCtx() {
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+      }
+
+      function playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.08, delay = 0) {
+        if (!enabled) return;
+        try {
+          const ctx = getCtx();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+          gain.gain.setValueAtTime(gainVal, ctx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + duration);
+        } catch (e) {}
+      }
+
+      return {
+        toggle() {
+          enabled = !enabled;
+          return enabled;
+        },
+        click() {
+          playTone(520, 'sine', 0.07, 0.06);
+        },
+        pop() {
+          playTone(620, 'triangle', 0.09, 0.08);
+          playTone(840, 'sine', 0.08, 0.06, 0.05);
+        },
+        splash() {
+          playTone(440, 'sine', 0.08, 0.07);
+          playTone(660, 'triangle', 0.11, 0.07, 0.04);
+        },
+        mixMagic() {
+          [523, 659, 784, 1046].forEach((f, i) => playTone(f, 'triangle', 0.14, 0.08, i * 0.06));
+        },
+        fanfare() {
+          [523, 659, 784, 1046, 1318].forEach((f, i) => playTone(f, 'triangle', 0.22, 0.09, i * 0.09));
+        },
+        error() {
+          playTone(220, 'sawtooth', 0.14, 0.07);
+          playTone(180, 'sawtooth', 0.18, 0.07, 0.11);
+        }
+      };
+    })();
+
+    window.toggleSound = function () {
+      const on = SoundFX.toggle();
+      document.getElementById('btn-sound-toggle').textContent = on ? '🔊' : '🔇';
+      if (on) SoundFX.click();
+    };
+
+    let toastTimer = null;
+    function showToast(text, icon = '✨') {
+      const banner = document.getElementById('toast-banner');
+      document.getElementById('toast-icon').textContent = icon;
+      document.getElementById('toast-text').textContent = text;
+      banner.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => banner.classList.add('hidden'), 3200);
+    }
+
+    /**
+     * =====================================================================
+     * 4. KUNCI PIN TETAP PANEL GURU IBU DIAN LESTARI (PIN: 2023)
+     * =====================================================================
+     */
+    window.openTeacherPinModal = function () {
+      SoundFX.click();
+      state.pinModal.buffer = '';
+      document.getElementById('pin-feedback-msg').textContent = '';
+      renderPinDots('pin-dots-row', 'pin-dot', 0);
+      document.getElementById('modal-teacher-pin').classList.remove('hidden');
+    };
+
+    window.closeTeacherPinModal = function () {
+      SoundFX.click();
+      state.pinModal.buffer = '';
+      document.getElementById('modal-teacher-pin').classList.add('hidden');
+    };
+
+    function renderPinDots(rowId, dotClass, count) {
+      const dots = document.querySelectorAll(`#${rowId} .${dotClass}`);
+      dots.forEach((dot, idx) => {
+        if (idx < count) {
+          dot.classList.remove('bg-white');
+          dot.classList.add('bg-indigo-600', 'scale-125');
+        } else {
+          dot.classList.add('bg-white');
+          dot.classList.remove('bg-indigo-600', 'scale-125');
+        }
+      });
+    }
+
+    window.pressPinDigit = function (digit) {
+      if (state.pinModal.buffer.length >= 4) return;
+      SoundFX.click();
+      state.pinModal.buffer += String(digit);
+      renderPinDots('pin-dots-row', 'pin-dot', state.pinModal.buffer.length);
+
+      if (state.pinModal.buffer.length === 4) {
+        const entered = state.pinModal.buffer;
+        setTimeout(() => {
+          evaluatePinEntry(entered);
+        }, 160);
+      }
+    };
+
+    window.backspacePinDigit = function () {
+      if (state.pinModal.buffer.length === 0) return;
+      SoundFX.click();
+      state.pinModal.buffer = state.pinModal.buffer.slice(0, -1);
+      renderPinDots('pin-dots-row', 'pin-dot', state.pinModal.buffer.length);
+    };
+
+    window.clearPinBuffer = function () {
+      SoundFX.click();
+      state.pinModal.buffer = '';
+      renderPinDots('pin-dots-row', 'pin-dot', 0);
+    };
+
+    function evaluatePinEntry(entered) {
+      const card = document.getElementById('pin-modal-card');
+      const feedback = document.getElementById('pin-feedback-msg');
+
+      if (entered === FIXED_TEACHER_PIN) {
+        SoundFX.pop();
+        state.pinModal.buffer = '';
+        document.getElementById('modal-teacher-pin').classList.add('hidden');
+        openTeacherPanel();
+      } else {
+        SoundFX.error();
+        card.classList.remove('animate-shake');
+        void card.offsetWidth;
+        card.classList.add('animate-shake');
+        state.pinModal.buffer = '';
+        feedback.textContent = 'PIN salah! Akses khusus Ibu Dian Lestari.';
+        renderPinDots('pin-dots-row', 'pin-dot', 0);
+      }
+    }
+
+    // Dukungan ketik keyboard fisik saat modal PIN terbuka
+    window.addEventListener('keydown', (e) => {
+      const pinModalOpen = !document.getElementById('modal-teacher-pin').classList.contains('hidden');
+      if (!pinModalOpen) return;
+      if (e.key >= '0' && e.key <= '9') {
+        pressPinDigit(e.key);
+      } else if (e.key === 'Backspace') {
+        backspacePinDigit();
+      } else if (e.key === 'Escape') {
+        closeTeacherPinModal();
+      }
+    });
+
+    /**
+     * Panel Guru Ibu Dian Lestari (3 Tabs)
+     */
+    function openTeacherPanel() {
+      updateTeacherStatsUI();
+      document.getElementById('teacher-announcement-input').value = state.classConfig.announcement || '';
+      switchTeacherTab('summary');
+      document.getElementById('modal-teacher-panel').classList.remove('hidden');
+    }
+
+    window.closeTeacherPanel = function () {
+      SoundFX.click();
+      document.getElementById('modal-teacher-panel').classList.add('hidden');
+    };
+
+    window.switchTeacherTab = function (tabName) {
+      SoundFX.click();
+      const tabs = ['summary', 'grades', 'moderate'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`gtab-${t}`);
+        const view = document.getElementById(`gview-${t}`);
+        if (t === tabName) {
+          btn.className = 'btn-tactile px-3.5 py-2 rounded-xl font-bold text-xs whitespace-nowrap bg-indigo-600 text-white';
+          view.classList.remove('hidden');
+        } else {
+          btn.className = 'btn-tactile px-3.5 py-2 rounded-xl font-bold text-xs whitespace-nowrap bg-white text-indigo-900 border border-indigo-200';
+          view.classList.add('hidden');
+        }
+      });
+
+      if (tabName === 'grades') renderTeacherGradesTable();
+      if (tabName === 'moderate') renderTeacherModerationGrid();
+    };
+
+    function updateTeacherStatsUI() {
+      const students = Object.values(state.studentsMap);
+      const artworks = state.artworksList;
+
+      document.getElementById('stat-total-students').textContent = students.length;
+      document.getElementById('stat-total-artworks').textContent = artworks.length;
+
+      const avgStars = artworks.length > 0
+        ? (artworks.reduce((sum, a) => sum + (a.stars || 0), 0) / artworks.length).toFixed(1)
+        : '0.0';
+      document.getElementById('stat-avg-stars').textContent = `${avgStars} ⭐`;
+
+      // Hitung estimasi kapasitas penyimpanan (KB / MB)
+      const totalBytes = new Blob([JSON.stringify(artworks), JSON.stringify(students)]).size;
+      const kb = (totalBytes / 1024).toFixed(1);
+      const maxQuotaKB = 5120; // Indikator 5 MB untuk visualisasi kenyamanan
+      const pct = Math.min(100, Math.max(3, Math.round((totalBytes / 1024 / maxQuotaKB) * 100)));
+
+      const usageLabel = document.getElementById('storage-usage-label');
+      const usageBar = document.getElementById('storage-usage-bar');
+      usageLabel.textContent = totalBytes > 1048576
+        ? `${(totalBytes / 1048576).toFixed(2)} MB terpakai`
+        : `${kb} KB terpakai`;
+
+      usageBar.style.width = `${pct}%`;
+      if (pct < 60) {
+        usageBar.className = 'h-full bg-emerald-500 transition-all duration-300';
+        usageLabel.className = 'text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800';
+      } else if (pct < 85) {
+        usageBar.className = 'h-full bg-amber-500 transition-all duration-300';
+        usageLabel.className = 'text-xs font-extrabold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800';
+      } else {
+        usageBar.className = 'h-full bg-rose-500 transition-all duration-300';
+        usageLabel.className = 'text-xs font-extrabold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800';
+      }
+    }
+
+    window.saveTeacherAnnouncement = async function () {
+      SoundFX.pop();
+      const text = document.getElementById('teacher-announcement-input').value.trim();
+      state.classConfig.announcement = text;
+      saveLocalJSON(LOCAL_KEYS.config, state.classConfig);
+      renderAnnouncementBanners();
+
+      if (isCloudConnected && db && firebaseUser) {
+        try {
+          const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'classConfig');
+          await setDoc(configRef, {
+            announcement: text,
+            updatedAt: Date.now()
+          }, { merge: true });
+        } catch (e) {}
+      }
+      showToast('Pengumuman tugas hari ini berhasil ditayangkan!', '📢');
+    };
+
+    window.clearTeacherAnnouncement = async function () {
+      document.getElementById('teacher-announcement-input').value = '';
+      await window.saveTeacherAnnouncement();
+    };
+
+    function renderAnnouncementBanners() {
+      const msg = (state.classConfig.announcement || '').trim();
+      const loginBox = document.getElementById('login-announcement-box');
+      const studioBar = document.getElementById('teacher-banner-bar');
+
+      if (msg) {
+        document.getElementById('login-announcement-text').textContent = msg;
+        document.getElementById('studio-announcement-text').textContent = msg;
+        loginBox.classList.remove('hidden');
+        studioBar.classList.remove('hidden');
+      } else {
+        loginBox.classList.add('hidden');
+        studioBar.classList.add('hidden');
+      }
+    }
+
+    function renderTeacherGradesTable() {
+      const tbody = document.getElementById('teacher-grades-tbody');
+      const students = Object.values(state.studentsMap).sort((a, b) => Number(a.absen) - Number(b.absen));
+
+      if (students.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-stone-500">Belum ada siswa Kelas 4B yang masuk ke aplikasi.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = students.map(st => {
+        const stars = st.stars || 0;
+        const works = st.artworksCount || 0;
+        const pts = st.points || 0;
+        const predikat = pts >= 300 ? 'Sangat Kreatif (A)' : pts >= 150 ? 'Kreatif (B+)' : works > 0 ? 'Berkembang (B)' : 'Belum Mengirim';
+        return `
+          <tr class="hover:bg-indigo-50/40">
+            <td class="py-2.5 px-3 font-extrabold text-indigo-900">#${st.absen}</td>
+            <td class="py-2.5 px-3">${st.avatar || '🎨'} ${escapeHTML(st.name)}</td>
+            <td class="py-2.5 px-3 text-center">${works}</td>
+            <td class="py-2.5 px-3 text-center text-amber-600">${stars} ⭐</td>
+            <td class="py-2.5 px-3 text-center text-emerald-700">${pts}</td>
+            <td class="py-2.5 px-3 text-xs text-stone-600">${predikat}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.downloadGradesCSV = function () {
+      SoundFX.pop();
+      const students = Object.values(state.studentsMap).sort((a, b) => Number(a.absen) - Number(b.absen));
+      const rows = [
+        ['SD Negeri Tambakrejo - Kelas 4B - Guru: Ibu Dian Lestari'],
+        ['Nomor Absen', 'Nama Siswa', 'Jumlah Karya', 'Total Bintang Emas', 'Total Poin Kreativitas']
+      ];
+      students.forEach(st => {
+        rows.push([st.absen, `"${(st.name || '').replace(/"/g, '""')}"`, st.artworksCount || 0, st.stars || 0, st.points || 0]);
+      });
+
+      const csvContent = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'rekap_nilai_seni_rupa_4B_SDN_Tambakrejo.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('File CSV rekap nilai Kelas 4B berhasil diunduh!', '📥');
+    };
+
+    function renderTeacherModerationGrid() {
+      const grid = document.getElementById('teacher-moderate-grid');
+      if (state.artworksList.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center text-stone-500 py-8 text-sm font-bold">Galeri Kelas 4B saat ini kosong.</p>`;
+        return;
+      }
+
+      grid.innerHTML = state.artworksList.map(art => `
+        <div class="bg-stone-50 rounded-2xl p-3 border-2 border-stone-200 flex flex-col justify-between">
+          <div>
+            <img src="${art.dataUrl}" alt="${escapeHTML(art.title)}" class="w-full h-32 object-contain bg-white rounded-xl border border-stone-200 mb-2" />
+            <p class="font-display font-bold text-sm text-stone-800 truncate">${escapeHTML(art.title)}</p>
+            <p class="text-xs text-stone-600 font-bold">${art.studentAvatar || '🎨'} ${escapeHTML(art.studentName)} (Absen ${art.studentAbsen}) • ${'⭐'.repeat(art.stars || 1)}</p>
+          </div>
+          <button onclick="confirmDeleteSingleArtwork('${art.id}')" class="mt-2.5 w-full btn-tactile py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold text-xs border border-rose-300">
+            🗑️ Hapus Karya Ini
+          </button>
+        </div>
+      `).join('');
+    }
+
+    window.confirmDeleteSingleArtwork = function (artId) {
+      openConfirmModal(
+        'Hapus Karya Siswa?',
+        'Karya ini akan dihapus dari Galeri Kelas 4B secara permanen.',
+        async () => {
+          state.artworksList = state.artworksList.filter(a => a.id !== artId);
+          saveLocalJSON(LOCAL_KEYS.artworks, state.artworksList);
+          if (isCloudConnected && db && firebaseUser) {
+            try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'artworks', artId));
+            } catch (e) {}
+          }
+          updateGalleryBadges();
+          renderClassGallery();
+          renderMyWorks();
+          renderTeacherModerationGrid();
+          updateTeacherStatsUI();
+          showToast('Karya berhasil dihapus dari galeri.', '🗑️');
+        }
+      );
+    };
+
+    window.confirmTeacherClearGallery = function () {
+      openConfirmModal(
+        'Bersihkan Semua Galeri?',
+        'Semua gambar di Galeri Kelas 4B akan dihapus (cocok saat berganti tema materi), namun daftar nama siswa tetap tersimpan.',
+        async () => {
+          const oldList = [...state.artworksList];
+          state.artworksList = [];
+          saveLocalJSON(LOCAL_KEYS.artworks, []);
+          if (isCloudConnected && db && firebaseUser) {
+            for (const item of oldList) {
+              try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'artworks', item.id));
+              } catch (e) {}
+            }
+          }
+          updateGalleryBadges();
+          renderClassGallery();
+          renderMyWorks();
+          renderTeacherModerationGrid();
+          updateTeacherStatsUI();
+          showToast('Seluruh Galeri Kelas 4B telah dibersihkan!', '🧹');
+        }
+      );
+    };
+
+    window.confirmTeacherResetAll = function () {
+      openConfirmModal(
+        'Reset Peringkat & Akun Siswa?',
+        'Semua karya galeri, bintang, poin, dan daftar akun siswa akan dikosongkan untuk semester baru!',
+        async () => {
+          const oldArtworks = [...state.artworksList];
+          const oldStudentKeys = Object.keys(state.studentsMap);
+          state.artworksList = [];
+          state.studentsMap = {};
+          saveLocalJSON(LOCAL_KEYS.artworks, []);
+          saveLocalJSON(LOCAL_KEYS.students, {});
+
+          if (isCloudConnected && db && firebaseUser) {
+            for (const item of oldArtworks) {
+              try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'artworks', item.id)); } catch (e) {}
+            }
+            for (const key of oldStudentKeys) {
+              try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', key)); } catch (e) {}
+            }
+          }
+          updateGalleryBadges();
+          renderClassGallery();
+          renderMyWorks();
+          renderLeaderboard();
+          renderQuickLoginList();
+          renderTeacherModerationGrid();
+          updateTeacherStatsUI();
+          showToast('Data siswa & papan peringkat telah direset!', '🔄');
+        }
+      );
+    };
+
+    /**
+     * =====================================================================
+     * 5. SISTEM LOGIN SISWA KELAS 4B & NAVIGASI STUDIO
+     * =====================================================================
+     */
+    function initAvatarSelector() {
+      const grid = document.getElementById('avatar-selector-grid');
+      grid.innerHTML = AVATARS.map((av, idx) => `
+        <button type="button" onclick="selectAvatar('${av.icon}', this)"
+          class="avatar-choice-btn btn-tactile p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 ${
+            idx === 0 ? 'bg-amber-100 border-rose-500 scale-105' : 'bg-stone-50 border-stone-200 hover:bg-amber-50'
+          }">
+          <span class="text-2xl">${av.icon}</span>
+          <span class="text-[10px] font-extrabold text-stone-700">${av.label}</span>
+        </button>
+      `).join('');
+    }
+
+    window.selectAvatar = function (icon, btnEl) {
+      SoundFX.click();
+      state.selectedAvatar = icon;
+      document.querySelectorAll('.avatar-choice-btn').forEach(b => {
+        b.className = 'avatar-choice-btn btn-tactile p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 bg-stone-50 border-stone-200 hover:bg-amber-50';
+      });
+      btnEl.className = 'avatar-choice-btn btn-tactile p-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 bg-amber-100 border-rose-500 scale-105';
+    };
+
+    function makeStudentKey(absen, name) {
+      const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      return `absen_${String(absen).padStart(2, '0')}_${cleanName}`;
+    }
+
+    window.handleStudentLogin = async function (e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('input-student-name').value.trim();
+      const absenVal = parseInt(document.getElementById('input-student-absen').value, 10);
+      if (!nameInput || isNaN(absenVal) || absenVal < 1 || absenVal > 45) {
+        showToast('Mohon isi Nama Lengkap dan Nomor Absen (1–45) dengan benar.', '⚠️');
+        return;
+      }
+
+      const key = makeStudentKey(absenVal, nameInput);
+      const existing = state.studentsMap[key];
+      const studentObj = {
+        key,
+        name: nameInput,
+        absen: absenVal,
+        avatar: state.selectedAvatar,
+        stars: existing ? (existing.stars || 0) : 0,
+        points: existing ? (existing.points || 0) : 0,
+        artworksCount: existing ? (existing.artworksCount || 0) : 0,
+        updatedAt: Date.now()
+      };
+
+      state.studentsMap[key] = studentObj;
+      state.currentStudent = studentObj;
+      saveLocalJSON(LOCAL_KEYS.students, state.studentsMap);
+      saveLocalJSON(LOCAL_KEYS.session, studentObj);
+
+      if (isCloudConnected && db && firebaseUser) {
+        try {
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', key), studentObj, { merge: true });
+        } catch (err) {}
+      }
+
+      SoundFX.pop();
+      enterStudioForStudent(studentObj);
+    };
+
+    window.quickLoginStudent = function (key) {
+      const st = state.studentsMap[key];
+      if (!st) return;
+      SoundFX.pop();
+      state.currentStudent = st;
+      saveLocalJSON(LOCAL_KEYS.session, st);
+      enterStudioForStudent(st);
+    };
+
+    function enterStudioForStudent(st) {
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-studio').classList.remove('hidden');
+      updateStudentHeaderUI();
+      switchStudioTab('coloring');
+      showToast(`Selamat berkarya di Studio Seni 4B, ${st.name}!`, st.avatar || '🎨');
+    }
+
+    window.logoutStudent = function () {
+      SoundFX.click();
+      document.body.classList.remove('focus-canvas-mode');
+      document.getElementById('btn-exit-focus').classList.add('hidden');
+      document.getElementById('mobile-bottom-dock').classList.add('hidden');
+      state.currentStudent = null;
+      saveLocalJSON(LOCAL_KEYS.session, null);
+      document.getElementById('screen-studio').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden');
+      renderQuickLoginList();
+    };
+
+    function syncCurrentStudentFromMap() {
+      if (!state.currentStudent) return;
+      const fresh = state.studentsMap[state.currentStudent.key];
+      if (fresh) {
+        state.currentStudent = fresh;
+        saveLocalJSON(LOCAL_KEYS.session, fresh);
+        updateStudentHeaderUI();
+      }
+    }
+
+    function updateStudentHeaderUI() {
+      const st = state.currentStudent;
+      if (!st) return;
+      document.getElementById('header-student-avatar').textContent = st.avatar || '🎨';
+      document.getElementById('header-student-name').textContent = st.name;
+      document.getElementById('header-student-absen').textContent = `Absen ${st.absen}`;
+      document.getElementById('header-student-stars').textContent = `⭐ ${st.stars || 0} • ${st.points || 0} Poin`;
+    }
+
+    function renderQuickLoginList() {
+      const section = document.getElementById('quick-login-section');
+      const listEl = document.getElementById('quick-login-list');
+      const students = Object.values(state.studentsMap).sort((a, b) => Number(a.absen) - Number(b.absen));
+
+      if (students.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+      section.classList.remove('hidden');
+      listEl.innerHTML = students.map(st => `
+        <button type="button" onclick="quickLoginStudent('${st.key}')"
+          class="btn-tactile px-3 py-1.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 text-xs font-bold text-stone-800 flex items-center gap-1.5">
+          <span>${st.avatar || '🎨'}</span>
+          <span class="text-indigo-800 font-extrabold">#${st.absen}</span>
+          <span>${escapeHTML(st.name)}</span>
+        </button>
+      `).join('');
+    }
+
+    window.switchStudioTab = function (tab) {
+      SoundFX.click();
+      state.activeTab = tab;
+      const tabs = ['coloring', 'compose', 'gallery', 'leaderboard', 'myworks'];
+      const activeStyles = {
+        coloring: 'bg-rose-500 text-white border-b-4 border-rose-700',
+        compose: 'bg-sky-600 text-white border-b-4 border-sky-800',
+        gallery: 'bg-indigo-600 text-white border-b-4 border-indigo-800',
+        leaderboard: 'bg-amber-500 text-white border-b-4 border-amber-700',
+        myworks: 'bg-emerald-600 text-white border-b-4 border-emerald-800'
+      };
+
+      tabs.forEach(t => {
+        const btn = document.getElementById(`nav-tab-${t}`);
+        const view = document.getElementById(`tab-view-${t}`);
+        if (t === tab) {
+          btn.className = `btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5 ${activeStyles[t]}`;
+          view.classList.remove('hidden');
+        } else {
+          btn.className = 'btn-tactile px-3.5 py-2 rounded-2xl font-display font-bold text-xs sm:text-sm whitespace-nowrap bg-amber-50 text-stone-700 border-2 border-amber-200 flex items-center gap-1.5';
+          view.classList.add('hidden');
+        }
+      });
+
+      // Atur Mobile Sticky Dock untuk Android
+      const dock = document.getElementById('mobile-bottom-dock');
+      const dockColoring = document.getElementById('mobile-dock-coloring');
+      const dockCompose = document.getElementById('mobile-dock-compose');
+      if (tab === 'coloring') {
+        dock.classList.remove('hidden');
+        dockColoring.classList.remove('hidden');
+        dockCompose.classList.add('hidden');
+      } else if (tab === 'compose') {
+        dock.classList.remove('hidden');
+        dockColoring.classList.add('hidden');
+        dockCompose.classList.remove('hidden');
+      } else {
+        dock.classList.add('hidden');
+      }
+
+      if (tab === 'gallery') renderClassGallery();
+      if (tab === 'leaderboard') renderLeaderboard();
+      if (tab === 'myworks') renderMyWorks();
+    };
+
+    // Fitur Android: Layar Penuh & Mode Fokus Kanvas
+    window.toggleFullscreen = function () {
+      SoundFX.click();
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {
+            showToast('Gunakan "Tambahkan ke Layar Utama" di Chrome HP untuk layar penuh penuh.', '📱');
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      } catch (e) {}
+    };
+
+    window.toggleFocusMode = function () {
+      SoundFX.click();
+      const active = document.body.classList.toggle('focus-canvas-mode');
+      const exitBtn = document.getElementById('btn-exit-focus');
+      if (active) {
+        exitBtn.classList.remove('hidden');
+        showToast('Mode Fokus Kanvas aktif! Area gambar diperluas.', '🔍');
+      } else {
+        exitBtn.classList.add('hidden');
+      }
+    };
+
+    /**
+     * =====================================================================
+     * 6. PALET WARNA & LAB PENCAMPUR WARNA PRIMER
+     * =====================================================================
+     */
+    const BASE_COLOR_CATEGORIES = [
+      {
+        title: 'Warna Primer (Warna Pokok)',
+        badgeColor: 'bg-rose-100 text-rose-800',
+        colors: [
+          { name: 'Merah', hex: '#EF4444' },
+          { name: 'Kuning', hex: '#FACC15' },
+          { name: 'Biru', hex: '#2563EB' }
+        ]
+      },
+      {
+        title: 'Warna Sekunder (Campuran Primer)',
+        badgeColor: 'bg-amber-100 text-amber-800',
+        colors: [
+          { name: 'Oranye', hex: '#F97316' },
+          { name: 'Hijau', hex: '#16A34A' },
+          { name: 'Ungu', hex: '#9333EA' }
+        ]
+      },
+      {
+        title: 'Warna Tambahan & Netral',
+        badgeColor: 'bg-sky-100 text-sky-800',
+        colors: [
+          { name: 'Merah Muda', hex: '#F472B6' },
+          { name: 'Biru Langit', hex: '#38BDF8' },
+          { name: 'Cokelat', hex: '#92400E' },
+          { name: 'Kuning Emas', hex: '#EAB308' },
+          { name: 'Putih', hex: '#FFFFFF' },
+          { name: 'Abu-abu', hex: '#94A3B8' },
+          { name: 'Hitam', hex: '#1E293B' }
+        ]
+      }
+    ];
+
+    function renderAllPalettes() {
+      const categories = [...BASE_COLOR_CATEGORIES];
+      if (state.coloring.unlockedColors.length > 0) {
+        categories.unshift({
+          title: '✨ Warna Hasil Racikan Lab-mu',
+          badgeColor: 'bg-indigo-100 text-indigo-800',
+          colors: state.coloring.unlockedColors
+        });
+      }
+
+      // Render Palet Mode 1
+      document.getElementById('coloring-palette-container').innerHTML = categories.map(cat => `
+        <div>
+          <span class="inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-md mb-1.5 ${cat.badgeColor}">${cat.title}</span>
+          <div class="flex flex-wrap gap-2">
+            ${cat.colors.map(c => `
+              <button type="button" onclick="selectColoringColor('${c.hex}', '${c.name}')" title="${c.name}"
+                class="btn-tactile w-9 h-9 rounded-full border-2 border-stone-700 shadow-sm hover:scale-110 transition-transform"
+                style="background-color: ${c.hex};"></button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      // Render Mobile Bottom Dock Strip
+      const allColors = categories.flatMap(c => c.colors);
+      document.getElementById('mobile-color-strip').innerHTML = allColors.map(c => `
+        <button type="button" onclick="selectColoringColor('${c.hex}', '${c.name}')"
+          class="w-9 h-9 rounded-full border-2 border-stone-700 shrink-0 shadow-sm"
+          style="background-color: ${c.hex};"></button>
+      `).join('');
+
+      // Render Palet Mode 2
+      document.getElementById('compose-palette-container').innerHTML = categories.map(cat => `
+        <div>
+          <span class="inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-md mb-1 ${cat.badgeColor}">${cat.title}</span>
+          <div class="flex flex-wrap gap-2">
+            ${cat.colors.map(c => `
+              <button type="button" onclick="selectComposeColor('${c.hex}', '${c.name}')" title="${c.name}"
+                class="btn-tactile w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-stone-700 shadow-sm hover:scale-110 transition-transform"
+                style="background-color: ${c.hex};"></button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.selectColoringColor = function (hex, name) {
+      SoundFX.click();
+      state.coloring.selectedColor = hex;
+      state.coloring.selectedColorName = name;
+      document.getElementById('active-color-dot').style.backgroundColor = hex;
+      document.getElementById('active-color-name').textContent = name;
+      if (state.coloring.tool === 'eraser') {
+        setColoringTool('fill');
+      }
+    };
+
+    window.addMixColor = function (hex, name) {
+      if (state.coloring.mixSlots.length >= 2) {
+        state.coloring.mixSlots = [];
+      }
+      state.coloring.mixSlots.push({ hex, name });
+      SoundFX.pop();
+      updateMixerUI();
+    };
+
+    window.resetMixer = function () {
+      SoundFX.click();
+      state.coloring.mixSlots = [];
+      updateMixerUI();
+    };
+
+    window.mixSelectedColors = function () {
+      if (state.coloring.mixSlots.length < 2) {
+        showToast('Pilih 2 warna dasar terlebih dahulu untuk dicampur!', '🧪');
+        return;
+      }
+      updateMixerUI();
+    };
+
+    function updateMixerUI() {
+      const slots = state.coloring.mixSlots;
+      const s1 = document.getElementById('mix-slot-1');
+      const l1 = document.getElementById('mix-label-1');
+      const s2 = document.getElementById('mix-slot-2');
+      const l2 = document.getElementById('mix-label-2');
+      const bowl = document.getElementById('mix-result-bowl');
+      const rLabel = document.getElementById('mix-result-label');
+
+      if (slots[0]) {
+        s1.style.backgroundColor = slots[0].hex;
+        s1.textContent = '';
+        s1.classList.remove('border-dashed');
+        l1.textContent = slots[0].name;
+      } else {
+        s1.style.backgroundColor = '#F5F5F4';
+        s1.textContent = '1';
+        s1.classList.add('border-dashed');
+        l1.textContent = 'Warna 1';
+      }
+
+      if (slots[1]) {
+        s2.style.backgroundColor = slots[1].hex;
+        s2.textContent = '';
+        s2.classList.remove('border-dashed');
+        l2.textContent = slots[1].name;
+
+        const pair = [slots[0].name, slots[1].name].sort().join('+');
+        const MIX_TABLE = {
+          'Kuning+Merah': { hex: '#F97316', name: 'Oranye Cerah', tip: 'Merah + Kuning = Warna Sekunder ORANYE CERAH!' },
+          'Biru+Kuning': { hex: '#16A34A', name: 'Hijau Daun', tip: 'Kuning + Biru = Warna Sekunder HIJAU DAUN!' },
+          'Biru+Merah': { hex: '#9333EA', name: 'Ungu Anggur', tip: 'Merah + Biru = Warna Sekunder UNGU ANGGUR!' },
+          'Merah+Putih': { hex: '#F472B6', name: 'Pink Pastel', tip: 'Merah + Putih = Merah Muda Pastel lembut!' },
+          'Kuning+Putih': { hex: '#FEF08A', name: 'Krim Pastel', tip: 'Kuning + Putih = Kuning Krim Pastel cerah!' },
+          'Biru+Putih': { hex: '#7DD3FC', name: 'Biru Langit', tip: 'Biru + Putih = Biru Langit Pastel sejuk!' },
+          'Hitam+Merah': { hex: '#7F1D1D', name: 'Merah Marun', tip: 'Merah + Hitam = Merah Marun gelap!' },
+          'Biru+Hitam': { hex: '#1E3A8A', name: 'Biru Dongker', tip: 'Biru + Hitam = Biru Dongker elegan!' },
+          'Hitam+Kuning': { hex: '#854D0E', name: 'Cokelat Zaitun', tip: 'Kuning + Hitam = Cokelat Zaitun alami!' },
+          'Hitam+Putih': { hex: '#64748B', name: 'Abu-abu Batu', tip: 'Putih + Hitam = Abu-abu netral!' }
+        };
+
+        const res = MIX_TABLE[pair] || {
+          hex: slots[0].hex,
+          name: slots[0].name,
+          tip: `Dua warna ${slots[0].name} menghasilkan warna ${slots[0].name} pekat!`
+        };
+
+        bowl.style.backgroundColor = res.hex;
+        bowl.textContent = '✨';
+        rLabel.textContent = res.name;
+
+        // Buka warna baru ke dalam palet jika belum ada
+        const exists = state.coloring.unlockedColors.some(c => c.hex === res.hex);
+        if (!exists && MIX_TABLE[pair]) {
+          state.coloring.unlockedColors.push({ name: res.name, hex: res.hex });
+          renderAllPalettes();
+        }
+
+        selectColoringColor(res.hex, res.name);
+        document.getElementById('coloring-tip-text').textContent = `${res.tip} Warna baru langsung aktif di kuas & paletmu!`;
+        SoundFX.mixMagic();
+      } else {
+        s2.style.backgroundColor = '#F5F5F4';
+        s2.textContent = '2';
+        s2.classList.add('border-dashed');
+        l2.textContent = 'Warna 2';
+        bowl.style.backgroundColor = '#F5F5F4';
+        bowl.textContent = '?';
+        rLabel.textContent = 'Hasil';
+      }
+    }
+
+    /**
+     * =====================================================================
+     * 7. MODE 1: KANVAS MEWARNAI 2-LAPIS & SCANLINE FLOOD FILL
+     * =====================================================================
+     */
+    const COLORING_TEMPLATES = [
+      {
+        id: 'flora',
+        name: '1. Ragam Hias Flora',
+        tip: 'Ragam hias flora terinspirasi bunga dan daun Nusantara. Padukan warna primer dan sekunder agar terlihat harmonis!',
+        draw: (ctx) => {
+          ctx.strokeStyle = '#1E293B';
+          ctx.lineWidth = 4;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+
+          // Bingkai luar & dalam tertutup rapat
+          ctx.strokeRect(14, 14, 772, 532);
+          ctx.strokeRect(36, 36, 728, 488);
+
+          // 4 Medali Sudut
+          [[74, 74], [726, 74], [74, 486], [726, 486]].forEach(([cx, cy]) => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, 26, 0, Math.PI * 2);
+            ctx.stroke();
+          });
+
+          // 6 Daun Ragam Hias
+          const leaves = [
+            [400, 280, 120, 280, 240, 210, 240, 350],
+            [400, 280, 680, 280, 560, 210, 560, 350],
+            [400, 280, 175, 130, 290, 120, 195, 235],
+            [400, 280, 625, 130, 510, 120, 605, 235],
+            [400, 280, 175, 430, 290, 440, 195, 325],
+            [400, 280, 625, 430, 510, 440, 605, 325]
+          ];
+          leaves.forEach(([x0, y0, x1, y1, cx1, cy1, cx2, cy2]) => {
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.quadraticCurveTo(cx1, cy1, x1, y1);
+            ctx.quadraticCurveTo(cx2, cy2, x0, y0);
+            ctx.closePath();
+            ctx.stroke();
+          });
+
+          // 4 Kelopak Utama
+          const petals = [
+            [400, 280, 400, 72, 345, 165, 455, 165],
+            [400, 280, 400, 488, 345, 395, 455, 395],
+            [400, 280, 192, 280, 285, 225, 285, 335],
+            [400, 280, 608, 280, 515, 225, 515, 335]
+          ];
+          petals.forEach(([x0, y0, x1, y1, cx1, cy1, cx2, cy2]) => {
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.quadraticCurveTo(cx1, cy1, x1, y1);
+            ctx.quadraticCurveTo(cx2, cy2, x0, y0);
+            ctx.closePath();
+            ctx.stroke();
+          });
+
+          // Lingkaran Mahkota & Inti Bunga
+          ctx.beginPath();
+          ctx.arc(400, 280, 66, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(400, 280, 32, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      },
+      {
+        id: 'gadang',
+        name: '2. Rumah Adat Gadang',
+        tip: 'Rumah Gadang dari Sumatera Barat memiliki atap gonjong melengkung indah. Ayo warnai atap, dinding, dan alam sekitarnya!',
+        draw: (ctx) => {
+          ctx.strokeStyle = '#1E293B';
+          ctx.lineWidth = 4;
+          ctx.lineJoin = 'round';
+
+          // Bingkai langit & tanah tertutup
+          ctx.strokeRect(12, 12, 776, 420);
+          ctx.strokeRect(12, 432, 776, 116);
+
+          // Matahari
+          ctx.beginPath();
+          ctx.arc(120, 95, 42, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Awan tertutup
+          ctx.beginPath();
+          ctx.arc(600, 92, 24, Math.PI * 0.8, Math.PI * 2.1);
+          ctx.arc(632, 86, 28, Math.PI * 1.0, Math.PI * 2.2);
+          ctx.arc(664, 96, 20, Math.PI * 1.2, Math.PI * 0.5);
+          ctx.lineTo(582, 114);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Pohon Kiri & Kanan
+          [[92, 104], [684, 696]].forEach(([tx, cx]) => {
+            ctx.strokeRect(tx, 312, 24, 120);
+            ctx.beginPath();
+            ctx.arc(cx, 280, 50, 0, Math.PI * 2);
+            ctx.stroke();
+          });
+
+          // 4 Tiang Kolong
+          [235, 325, 450, 540].forEach(px => {
+            ctx.strokeRect(px, 365, 26, 67);
+          });
+
+          // Badan Rumah Gadang
+          ctx.beginPath();
+          ctx.moveTo(205, 245);
+          ctx.lineTo(595, 245);
+          ctx.lineTo(575, 365);
+          ctx.lineTo(225, 365);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Jendela & Pintu
+          ctx.strokeRect(255, 275, 46, 52);
+          ctx.strokeRect(500, 275, 46, 52);
+          ctx.strokeRect(372, 270, 56, 95);
+
+          // Tangga
+          ctx.beginPath();
+          ctx.moveTo(364, 365);
+          ctx.lineTo(436, 365);
+          ctx.lineTo(452, 432);
+          ctx.lineTo(348, 432);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Atap Gonjong Bawah & Atas
+          ctx.beginPath();
+          ctx.moveTo(145, 125);
+          ctx.quadraticCurveTo(275, 210, 400, 185);
+          ctx.quadraticCurveTo(525, 210, 655, 125);
+          ctx.lineTo(595, 245);
+          ctx.lineTo(205, 245);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(245, 85);
+          ctx.quadraticCurveTo(325, 155, 400, 138);
+          ctx.quadraticCurveTo(475, 155, 555, 85);
+          ctx.lineTo(510, 185);
+          ctx.lineTo(290, 185);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      },
+      {
+        id: 'ocean',
+        name: '3. Taman Bawah Laut',
+        tip: 'Warnai ikan hias, terumbu karang, bintang laut, dan rumput laut dengan warna cerah agar dasar lautmu tampak memukau!',
+        draw: (ctx) => {
+          ctx.strokeStyle = '#1E293B';
+          ctx.lineWidth = 4;
+          ctx.lineJoin = 'round';
+
+          // Air Laut & Pasir Dasar
+          ctx.strokeRect(12, 12, 776, 445);
+          ctx.strokeRect(12, 457, 776, 91);
+
+          // Rumput Laut Kiri & Kanan
+          [[82, 457], [705, 457]].forEach(([bx, by]) => {
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.quadraticCurveTo(bx - 30, 360, bx, 280);
+            ctx.quadraticCurveTo(bx + 30, 210, bx + 5, 165);
+            ctx.quadraticCurveTo(bx + 45, 225, bx + 22, 295);
+            ctx.quadraticCurveTo(bx + 5, 375, bx + 28, by);
+            ctx.closePath();
+            ctx.stroke();
+          });
+
+          // Ekor & Sirip Ikan
+          ctx.beginPath();
+          ctx.moveTo(265, 245);
+          ctx.lineTo(175, 175);
+          ctx.lineTo(198, 245);
+          ctx.lineTo(175, 315);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(335, 168);
+          ctx.quadraticCurveTo(395, 105, 455, 172);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(345, 318);
+          ctx.quadraticCurveTo(395, 375, 445, 318);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Badan Ikan (3 Ruas Tertutup untuk Gradasi Warna)
+          ctx.beginPath();
+          ctx.ellipse(390, 245, 135, 82, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Garis Belang Ikan Tertutup
+          ctx.beginPath();
+          ctx.moveTo(355, 166);
+          ctx.quadraticCurveTo(335, 245, 355, 324);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(435, 168);
+          ctx.quadraticCurveTo(415, 245, 435, 322);
+          ctx.stroke();
+
+          // Mata Ikan
+          ctx.beginPath();
+          ctx.arc(482, 228, 12, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Bintang Laut
+          ctx.beginPath();
+          const sx = 580, sy = 498;
+          for (let i = 0; i < 10; i++) {
+            const r = i % 2 === 0 ? 36 : 16;
+            const ang = (Math.PI / 5) * i - Math.PI / 2;
+            const px = sx + Math.cos(ang) * r;
+            const py = sy + Math.sin(ang) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.stroke();
+
+          // Gelembung Udara
+          [[555, 170, 16], [588, 125, 22], [545, 85, 13]].forEach(([bx, by, br]) => {
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.stroke();
+          });
+        }
+      },
+      {
+        id: 'landscape',
+        name: '4. Gunung & Sawah',
+        tip: 'Gunakan paduan warna hijau muda dan hijau tua pada petak sawah terasering, serta biru cerah pada aliran sungai!',
+        draw: (ctx) => {
+          ctx.strokeStyle = '#1E293B';
+          ctx.lineWidth = 4;
+          ctx.lineJoin = 'round';
+
+          // Bingkai Utama
+          ctx.strokeRect(12, 12, 776, 536);
+
+          // Garis Horizon Sawah
+          ctx.beginPath();
+          ctx.moveTo(12, 320);
+          ctx.lineTo(788, 320);
+          ctx.stroke();
+
+          // Matahari di Tengah Gunung
+          ctx.beginPath();
+          ctx.arc(400, 235, 56, Math.PI, 0);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Gunung Kiri & Kanan
+          ctx.beginPath();
+          ctx.moveTo(35, 320);
+          ctx.lineTo(245, 110);
+          ctx.lineTo(445, 320);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(355, 320);
+          ctx.lineTo(560, 105);
+          ctx.lineTo(765, 320);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Sungai Mengalir di Tengah
+          ctx.beginPath();
+          ctx.moveTo(360, 320);
+          ctx.lineTo(440, 320);
+          ctx.lineTo(545, 548);
+          ctx.lineTo(255, 548);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Petak Sawah Kiri & Kanan
+          ctx.beginPath();
+          ctx.moveTo(12, 425);
+          ctx.lineTo(310, 425);
+          ctx.moveTo(490, 425);
+          ctx.lineTo(788, 425);
+          ctx.stroke();
+
+          // Pohon di Tepi Sawah
+          ctx.strokeRect(112, 342, 22, 83);
+          ctx.beginPath();
+          ctx.arc(123, 312, 46, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      },
+      {
+        id: 'mask',
+        name: '5. Topeng Hias Nusantara',
+        tip: 'Topeng hias tradisional melambangkan karakter gagah dan ceria. Beri warna kontras pada mahkota, pipi, dan kumisnya!',
+        draw: (ctx) => {
+          ctx.strokeStyle = '#1E293B';
+          ctx.lineWidth = 4;
+          ctx.lineJoin = 'round';
+
+          ctx.strokeRect(14, 14, 772, 532);
+
+          // Telinga Kiri & Kanan
+          ctx.beginPath();
+          ctx.ellipse(215, 275, 34, 52, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.ellipse(585, 275, 34, 52, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Wajah Topeng
+          ctx.beginPath();
+          ctx.moveTo(235, 170);
+          ctx.lineTo(565, 170);
+          ctx.lineTo(555, 345);
+          ctx.quadraticCurveTo(545, 495, 400, 495);
+          ctx.quadraticCurveTo(255, 495, 245, 345);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Mahkota Topeng
+          ctx.beginPath();
+          ctx.moveTo(220, 170);
+          ctx.lineTo(580, 170);
+          ctx.lineTo(555, 115);
+          ctx.lineTo(245, 115);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(400, 32);
+          ctx.lineTo(345, 115);
+          ctx.lineTo(455, 115);
+          ctx.closePath();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(400, 142, 18, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Mata Kiri & Kanan
+          [[320, 248], [480, 248]].forEach(([ex, ey]) => {
+            ctx.beginPath();
+            ctx.ellipse(ex, ey, 36, 22, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(ex, ey, 11, 0, Math.PI * 2);
+            ctx.stroke();
+          });
+
+          // Pipi Hias
+          ctx.beginPath();
+          ctx.arc(290, 325, 26, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(510, 325, 26, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Hidung
+          ctx.beginPath();
+          ctx.moveTo(400, 260);
+          ctx.lineTo(372, 338);
+          ctx.lineTo(428, 338);
+          ctx.closePath();
+          ctx.stroke();
+
+          // Mulut Tersenyum
+          ctx.beginPath();
+          ctx.moveTo(325, 395);
+          ctx.quadraticCurveTo(400, 468, 475, 395);
+          ctx.quadraticCurveTo(400, 415, 325, 395);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+    ];
+
+    function initColoringModule() {
+      const tabs = document.getElementById('coloring-template-tabs');
+      tabs.innerHTML = COLORING_TEMPLATES.map((tpl, idx) => `
+        <button type="button" onclick="loadColoringTemplate(${idx})" id="ctab-${idx}"
+          class="btn-tactile px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 ${
+            idx === 0 ? 'bg-rose-500 text-white border-rose-600' : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+          }">
+          ${tpl.name}
+        </button>
+      `).join('');
+
+      setupDualCanvasEvents();
+      loadColoringTemplate(0);
+    }
+
+    window.loadColoringTemplate = function (index) {
+      SoundFX.click();
+      state.coloring.templateIndex = index;
+      state.coloring.history = [];
+
+      COLORING_TEMPLATES.forEach((_, idx) => {
+        const btn = document.getElementById(`ctab-${idx}`);
+        if (!btn) return;
+        btn.className = idx === index
+          ? 'btn-tactile px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 bg-rose-500 text-white border-rose-600'
+          : 'btn-tactile px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100';
+      });
+
+      const tpl = COLORING_TEMPLATES[index];
+      document.getElementById('coloring-tip-text').textContent = tpl.tip;
+
+      const paintCanvas = document.getElementById('coloring-paint-canvas');
+      const outlineCanvas = document.getElementById('coloring-outline-canvas');
+      const pCtx = paintCanvas.getContext('2d');
+      const oCtx = outlineCanvas.getContext('2d');
+
+      pCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+      oCtx.clearRect(0, 0, outlineCanvas.width, outlineCanvas.height);
+      tpl.draw(oCtx);
+    };
+
+    window.setColoringTool = function (tool) {
+      SoundFX.click();
+      state.coloring.tool = tool;
+      ['fill', 'brush', 'eraser'].forEach(t => {
+        const btn = document.getElementById(`tool-${t}`);
+        const mBtn = document.getElementById(`mdock-${t}`);
+        if (btn) {
+          btn.className = t === tool
+            ? 'btn-tactile px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border-2 flex items-center gap-1.5 bg-rose-500 text-white border-rose-600'
+            : 'btn-tactile px-3 py-2 rounded-xl font-bold text-xs sm:text-sm border-2 flex items-center gap-1.5 bg-stone-100 text-stone-700 border-stone-300';
+        }
+        if (mBtn) {
+          mBtn.className = t === tool
+            ? 'w-11 h-11 rounded-xl bg-rose-500 text-white font-bold text-lg flex items-center justify-center shadow-sm'
+            : 'w-11 h-11 rounded-xl bg-stone-100 text-stone-700 font-bold text-lg flex items-center justify-center border border-stone-300';
+        }
+      });
+
+      const sizeBox = document.getElementById('brush-size-controls');
+      if (tool === 'brush') {
+        sizeBox.classList.remove('hidden');
+        sizeBox.classList.add('flex');
+      } else {
+        sizeBox.classList.add('hidden');
+        sizeBox.classList.remove('flex');
+      }
+    };
+
+    window.setBrushSize = function (size) {
+      SoundFX.click();
+      state.coloring.brushSize = size;
+      [6, 14, 26].forEach(s => {
+        const btn = document.getElementById(`bsize-${s}`);
+        if (btn) {
+          btn.className = s === size
+            ? 'px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-400 text-amber-950'
+            : 'px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-stone-700';
+        }
+      });
+    };
+
+    function pushColoringUndoState() {
+      const paintCanvas = document.getElementById('coloring-paint-canvas');
+      const pCtx = paintCanvas.getContext('2d');
+      state.coloring.history.push(pCtx.getImageData(0, 0, paintCanvas.width, paintCanvas.height));
+      if (state.coloring.history.length > 15) state.coloring.history.shift();
+    }
+
+    window.undoColoring = function () {
+      if (state.coloring.history.length === 0) return;
+      SoundFX.click();
+      const paintCanvas = document.getElementById('coloring-paint-canvas');
+      const pCtx = paintCanvas.getContext('2d');
+      const prev = state.coloring.history.pop();
+      pCtx.putImageData(prev, 0, 0);
+    };
+
+    window.confirmClearColoring = function () {
+      openConfirmModal(
+        'Bersihkan Warna Gambar?',
+        'Semua warna dan goresan kuas akan dibersihkan, sementara garis tepi hitam tetap utuh.',
+        () => {
+          pushColoringUndoState();
+          const paintCanvas = document.getElementById('coloring-paint-canvas');
+          paintCanvas.getContext('2d').clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+        }
+      );
+    };
+
+    function hexToRGBA(hex) {
+      const clean = hex.replace('#', '');
+      const num = parseInt(clean, 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255, 255];
+    }
+
+    /**
+     * Algoritma Scanline Flood Fill cepat pada lapisan bawah menggunakan batas garis hitam lapisan atas
+     */
+    function performScanlineFloodFill(startX, startY, fillHex) {
+      const paintCanvas = document.getElementById('coloring-paint-canvas');
+      const outlineCanvas = document.getElementById('coloring-outline-canvas');
+      const w = paintCanvas.width;
+      const h = paintCanvas.height;
+
+      const x0 = Math.floor(startX);
+      const y0 = Math.floor(startY);
+      if (x0 < 0 || x0 >= w || y0 < 0 || y0 >= h) return;
+
+      const pCtx = paintCanvas.getContext('2d');
+      const oCtx = outlineCanvas.getContext('2d');
+      const paintImg = pCtx.getImageData(0, 0, w, h);
+      const outlineImg = oCtx.getImageData(0, 0, w, h);
+      const pData = paintImg.data;
+      const oData = outlineImg.data;
+
+      // Jangan isi jika titik awal tepat mengenai garis tepi hitam tebal
+      const startIdx = (y0 * w + x0) * 4;
+      if (oData[startIdx + 3] > 160) return;
+
+      const targetR = pData[startIdx];
+      const targetG = pData[startIdx + 1];
+      const targetB = pData[startIdx + 2];
+      const targetA = pData[startIdx + 3];
+
+      const [fillR, fillG, fillB, fillA] = hexToRGBA(fillHex);
+      if (targetR === fillR && targetG === fillG && targetB === fillB && targetA === fillA) return;
+
+      const visited = new Uint8Array(w * h);
+
+      function canFill(idx) {
+        // Batas garis tepi dari outlineCanvas
+        if (oData[idx + 3] > 140) return false;
+        return (
+          Math.abs(pData[idx] - targetR) <= 18 &&
+          Math.abs(pData[idx + 1] - targetG) <= 18 &&
+          Math.abs(pData[idx + 2] - targetB) <= 18 &&
+          Math.abs(pData[idx + 3] - targetA) <= 25
+        );
+      }
+
+      const stack = [[x0, y0]];
+      while (stack.length > 0) {
+        const [cx, cy] = stack.pop();
+        let lx = cx;
+        while (lx >= 0 && !visited[cy * w + lx] && canFill((cy * w + lx) * 4)) {
+          lx--;
+        }
+        lx++;
+
+        let rx = cx;
+        while (rx < w && !visited[cy * w + rx] && canFill((cy * w + rx) * 4)) {
+          rx++;
+        }
+        rx--;
+
+        let spanAbove = false;
+        let spanBelow = false;
+
+        for (let x = lx; x <= rx; x++) {
+          const pos = cy * w + x;
+          visited[pos] = 1;
+          const idx = pos * 4;
+          pData[idx] = fillR;
+          pData[idx + 1] = fillG;
+          pData[idx + 2] = fillB;
+          pData[idx + 3] = fillA;
+
+          if (cy > 0) {
+            const upPos = (cy - 1) * w + x;
+            const upOk = !visited[upPos] && canFill(upPos * 4);
+            if (!spanAbove && upOk) {
+              stack.push([x, cy - 1]);
+              spanAbove = true;
+            } else if (spanAbove && !upOk) {
+              spanAbove = false;
+            }
+          }
+
+          if (cy < h - 1) {
+            const downPos = (cy + 1) * w + x;
+            const downOk = !visited[downPos] && canFill(downPos * 4);
+            if (!spanBelow && downOk) {
+              stack.push([x, cy + 1]);
+              spanBelow = true;
+            } else if (spanBelow && !downOk) {
+              spanBelow = false;
+            }
+          }
+        }
+      }
+
+      // Perluas 1 piksel warna ke bawah anti-aliased outline agar tidak ada celah putih tipis
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const pos = y * w + x;
+          const idx = pos * 4;
+          if (oData[idx + 3] > 20 && oData[idx + 3] <= 220) {
+            if (visited[pos - 1] || visited[pos + 1] || visited[pos - w] || visited[pos + w]) {
+              pData[idx] = fillR;
+              pData[idx + 1] = fillG;
+              pData[idx + 2] = fillB;
+              pData[idx + 3] = fillA;
+            }
+          }
+        }
+      }
+
+      pCtx.putImageData(paintImg, 0, 0);
+    }
+
+    function setupDualCanvasEvents() {
+      const paintCanvas = document.getElementById('coloring-paint-canvas');
+      const pCtx = paintCanvas.getContext('2d');
+      let drawing = false;
+      let lastPt = null;
+
+      function getCanvasCoords(e) {
+        const rect = paintCanvas.getBoundingClientRect();
+        return {
+          x: ((e.clientX - rect.left) / rect.width) * paintCanvas.width,
+          y: ((e.clientY - rect.top) / rect.height) * paintCanvas.height
+        };
+      }
+
+      paintCanvas.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        paintCanvas.setPointerCapture(e.pointerId);
+        const pt = getCanvasCoords(e);
+
+        if (state.coloring.tool === 'fill') {
+          pushColoringUndoState();
+          performScanlineFloodFill(pt.x, pt.y, state.coloring.selectedColor);
+          SoundFX.splash();
+        } else {
+          pushColoringUndoState();
+          drawing = true;
+          lastPt = pt;
+          pCtx.save();
+          pCtx.lineCap = 'round';
+          pCtx.lineJoin = 'round';
+          if (state.coloring.tool === 'eraser') {
+            pCtx.globalCompositeOperation = 'destination-out';
+            pCtx.lineWidth = 24;
+          } else {
+            pCtx.globalCompositeOperation = 'source-over';
+            pCtx.strokeStyle = state.coloring.selectedColor;
+            pCtx.lineWidth = state.coloring.brushSize;
+          }
+          pCtx.beginPath();
+          pCtx.moveTo(pt.x, pt.y);
+          pCtx.lineTo(pt.x + 0.1, pt.y);
+          pCtx.stroke();
+          pCtx.restore();
+          SoundFX.pop();
+        }
+      });
+
+      paintCanvas.addEventListener('pointermove', (e) => {
+        if (!drawing || !lastPt) return;
+        e.preventDefault();
+        const pt = getCanvasCoords(e);
+        pCtx.save();
+        pCtx.lineCap = 'round';
+        pCtx.lineJoin = 'round';
+        if (state.coloring.tool === 'eraser') {
+          pCtx.globalCompositeOperation = 'destination-out';
+          pCtx.lineWidth = 24;
+        } else {
+          pCtx.globalCompositeOperation = 'source-over';
+          pCtx.strokeStyle = state.coloring.selectedColor;
+          pCtx.lineWidth = state.coloring.brushSize;
+        }
+        pCtx.beginPath();
+        pCtx.moveTo(lastPt.x, lastPt.y);
+        pCtx.lineTo(pt.x, pt.y);
+        pCtx.stroke();
+        pCtx.restore();
+        lastPt = pt;
+      });
+
+      const stopDraw = () => {
+        drawing = false;
+        lastPt = null;
+      };
+      paintCanvas.addEventListener('pointerup', stopDraw);
+      paintCanvas.addEventListener('pointercancel', stopDraw);
+    }
+
+    /**
+     * =====================================================================
+     * 8. MODE 2: SUSUN & WARNAI (GEOMETRIS & ORGANIS)
+     * =====================================================================
+     */
+    const SHAPE_DEFINITIONS = [
+      { id: 'square', name: 'Persegi', render: (f) => `<rect x="-44" y="-44" width="88" height="88" rx="4" fill="${f}" stroke="#1E293B" stroke-width="3.5"/>` },
+      { id: 'rect', name: 'P. Panjang', render: (f) => `<rect x="-64" y="-30" width="128" height="60" rx="4" fill="${f}" stroke="#1E293B" stroke-width="3.5"/>` },
+      { id: 'triangle', name: 'Segitiga', render: (f) => `<polygon points="0,-50 -50,40 50,40" fill="${f}" stroke="#1E293B" stroke-width="3.5" stroke-linejoin="round"/>` },
+      { id: 'circle', name: 'Lingkaran', render: (f) => `<circle cx="0" cy="0" r="45" fill="${f}" stroke="#1E293B" stroke-width="3.5"/>` },
+      { id: 'semicircle', name: '1/2 Lingkaran', render: (f) => `<path d="M -50 22 A 50 50 0 0 1 50 22 Z" fill="${f}" stroke="#1E293B" stroke-width="3.5" stroke-linejoin="round"/>` },
+      { id: 'trapezoid', name: 'Trapesium', render: (f) => `<polygon points="-34,-35 34,-35 56,35 -56,35" fill="${f}" stroke="#1E293B" stroke-width="3.5" stroke-linejoin="round"/>` },
+      { id: 'star', name: 'Bintang', render: (f) => `<polygon points="0,-50 14,-16 50,-16 21,7 32,44 0,22 -32,44 -21,7 -50,-16 -14,-16" fill="${f}" stroke="#1E293B" stroke-width="3.5" stroke-linejoin="round"/>` },
+      { id: 'cloud', name: 'Awan Organis', render: (f) => `<path d="M -42 22 C -60 22, -66 2, -50 -8 C -46 -30, -14 -34, 0 -18 C 16 -32, 48 -24, 48 -2 C 64 4, 60 22, 42 22 Z" fill="${f}" stroke="#1E293B" stroke-width="3.5" stroke-linejoin="round"/>` }
+    ];
+
+    const COMPOSE_THEMES = [
+      {
+        id: 'robot',
+        name: '1. Rakit Robot Geometri',
+        tip: 'Susun persegi untuk kepala & badan robot, persegi panjang untuk tangan/kaki, dan segitiga sebagai antena!',
+        guideSVG: `
+          <g stroke="#38BDF8" stroke-width="3" stroke-dasharray="9 6" fill="#E0F2FE" fill-opacity="0.35">
+            <polygon points="400,48 380,92 420,92"/>
+            <rect x="345" y="92" width="110" height="92" rx="8"/>
+            <rect x="315" y="195" width="170" height="175" rx="10"/>
+            <rect x="215" y="210" width="90" height="42" rx="6"/>
+            <rect x="495" y="210" width="90" height="42" rx="6"/>
+            <rect x="335" y="382" width="48" height="115" rx="6"/>
+            <rect x="417" y="382" width="48" height="115" rx="6"/>
+          </g>`
+      },
+      {
+        id: 'house',
+        name: '2. Susun Rumah Impian',
+        tip: 'Gunakan segitiga untuk atap rumah, persegi untuk dinding, dan bentuk awan organis di langit!',
+        guideSVG: `
+          <g stroke="#F59E0B" stroke-width="3" stroke-dasharray="9 6" fill="#FEF3C7" fill-opacity="0.4">
+            <polygon points="400,115 245,255 555,255"/>
+            <rect x="275" y="255" width="250" height="210" rx="6"/>
+            <rect x="372" y="355" width="56" height="110" rx="4"/>
+            <circle cx="145" cy="115" r="46"/>
+            <ellipse cx="645" cy="120" rx="65" ry="32"/>
+          </g>`
+      },
+      {
+        id: 'ship',
+        name: '3. Kapal Layar di Lautan',
+        tip: 'Gunakan setengah lingkaran atau trapesium untuk badan kapal, lalu pasang dua segitiga sebagai layarnya!',
+        guideSVG: `
+          <g stroke="#10B981" stroke-width="3" stroke-dasharray="9 6" fill="#D1FAE5" fill-opacity="0.4">
+            <polygon points="390,110 270,315 390,315"/>
+            <polygon points="410,135 410,315 520,315"/>
+            <polygon points="210,335 590,335 535,445 265,445"/>
+            <circle cx="655" cy="115" r="44"/>
+          </g>`
+      },
+      {
+        id: 'free',
+        name: '4. Kreasi Bebas Merdeka',
+        tip: 'Kanvas terbuka bebas! Gabungkan bentuk geometris & organis menjadi roket, hewan lucu, atau taman impianmu!',
+        guideSVG: ``
+      }
+    ];
+
+    function initComposeModule() {
+      const tabs = document.getElementById('compose-theme-tabs');
+      tabs.innerHTML = COMPOSE_THEMES.map((thm, idx) => `
+        <button type="button" onclick="loadComposeTheme(${idx})" id="thm-tab-${idx}"
+          class="btn-tactile px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 ${
+            idx === 0 ? 'bg-sky-600 text-white border-sky-700' : 'bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100'
+          }">
+          ${thm.name}
+        </button>
+      `).join('');
+
+      document.getElementById('shape-tray-grid').innerHTML = SHAPE_DEFINITIONS.map(sh => `
+        <button type="button" onclick="spawnShape('${sh.id}')"
+          class="btn-tactile bg-sky-50/70 hover:bg-sky-100 border-2 border-sky-200 rounded-2xl p-2 flex flex-col items-center justify-center gap-1">
+          <svg viewBox="-65 -58 130 116" class="w-11 h-10">${sh.render('#38BDF8')}</svg>
+          <span class="text-[11px] font-extrabold text-stone-800 leading-tight text-center">${sh.name}</span>
+        </button>
+      `).join('');
+
+      setupComposeCanvasEvents();
+      loadComposeTheme(0);
+    }
+
+    window.loadComposeTheme = function (index) {
+      SoundFX.click();
+      state.compose.themeIndex = index;
+      state.compose.shapes = [];
+      state.compose.selectedUid = null;
+      state.compose.bgColor = '#FFFFFF';
+      document.getElementById('compose-bg-rect').setAttribute('fill', '#FFFFFF');
+
+      COMPOSE_THEMES.forEach((_, idx) => {
+        const btn = document.getElementById(`thm-tab-${idx}`);
+        if (!btn) return;
+        btn.className = idx === index
+          ? 'btn-tactile px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 bg-sky-600 text-white border-sky-700'
+          : 'btn-tactile px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap border-2 bg-sky-50 text-sky-900 border-sky-200 hover:bg-sky-100';
+      });
+
+      const thm = COMPOSE_THEMES[index];
+      document.getElementById('compose-tip-text').textContent = thm.tip;
+      document.getElementById('compose-guide-layer').innerHTML = thm.guideSVG;
+      document.getElementById('compose-guide-layer').style.display = state.compose.showGuide ? 'inline' : 'none';
+      renderComposeCanvas();
+    };
+
+    window.toggleComposeGuide = function () {
+      SoundFX.click();
+      state.compose.showGuide = !state.compose.showGuide;
+      document.getElementById('guide-toggle-label').textContent = `Pola Bantu: ${state.compose.showGuide ? 'ON' : 'OFF'}`;
+      document.getElementById('compose-guide-layer').style.display = state.compose.showGuide ? 'inline' : 'none';
+    };
+
+    window.setComposeStep = function (step) {
+      SoundFX.click();
+      state.compose.step = step;
+      const bArr = document.getElementById('step-btn-arrange');
+      const bCol = document.getElementById('step-btn-color');
+      const mArr = document.getElementById('mdock-step-arrange');
+      const mCol = document.getElementById('mdock-step-color');
+
+      if (step === 'arrange') {
+        bArr.className = 'flex-1 sm:flex-initial btn-tactile px-4 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-sky-600 text-white border-b-4 border-sky-800 shadow-sm';
+        bCol.className = 'flex-1 sm:flex-initial btn-tactile px-4 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-white text-stone-700 border-2 border-stone-300';
+        if (mArr) mArr.className = 'flex-1 h-11 rounded-xl bg-sky-600 text-white font-display font-bold text-xs flex items-center justify-center gap-1';
+        if (mCol) mCol.className = 'flex-1 h-11 rounded-xl bg-stone-100 text-stone-700 font-display font-bold text-xs border border-stone-300 flex items-center justify-center gap-1';
+        document.getElementById('compose-tip-text').textContent = 'Tahap 1: Seret, putar, dan atur ukuran bentuk untuk menyusun komposisi seimbang!';
+      } else {
+        bCol.className = 'flex-1 sm:flex-initial btn-tactile px-4 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-rose-500 text-white border-b-4 border-rose-700 shadow-sm';
+        bArr.className = 'flex-1 sm:flex-initial btn-tactile px-4 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-white text-stone-700 border-2 border-stone-300';
+        if (mCol) mCol.className = 'flex-1 h-11 rounded-xl bg-rose-500 text-white font-display font-bold text-xs flex items-center justify-center gap-1';
+        if (mArr) mArr.className = 'flex-1 h-11 rounded-xl bg-stone-100 text-stone-700 font-display font-bold text-xs border border-stone-300 flex items-center justify-center gap-1';
+        document.getElementById('compose-tip-text').textContent = 'Tahap 2: Pilih warna lalu ketuk bentuk-bentuk di kanvas untuk mewarnainya tanpa menggeser!';
+      }
+    };
+
+    window.selectComposeColor = function (hex, name) {
+      SoundFX.click();
+      state.compose.selectedColor = hex;
+      state.compose.selectedColorName = name;
+      document.getElementById('compose-active-color-dot').style.backgroundColor = hex;
+      document.getElementById('compose-active-color-name').textContent = name;
+
+      if (state.compose.selectedUid) {
+        const target = state.compose.shapes.find(s => s.uid === state.compose.selectedUid);
+        if (target) {
+          target.fill = hex;
+          SoundFX.splash();
+          renderComposeCanvas();
+        }
+      }
+    };
+
+    window.spawnShape = function (shapeId) {
+      SoundFX.pop();
+      const uid = 'sh_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const offset = (state.compose.shapes.length % 5) * 18;
+      state.compose.shapes.push({
+        uid,
+        shapeId,
+        x: 380 + offset,
+        y: 260 + offset,
+        scale: 1,
+        rotation: 0,
+        fill: state.compose.step === 'color' ? state.compose.selectedColor : '#E2E8F0'
+      });
+      state.compose.selectedUid = uid;
+      renderComposeCanvas();
+    };
+
+    window.setComposeBackground = function (hex) {
+      SoundFX.splash();
+      state.compose.bgColor = hex;
+      document.getElementById('compose-bg-rect').setAttribute('fill', hex);
+    };
+
+    window.transformSelectedShape = function (action) {
+      if (!state.compose.selectedUid) return;
+      const idx = state.compose.shapes.findIndex(s => s.uid === state.compose.selectedUid);
+      if (idx === -1) return;
+      SoundFX.click();
+      const item = state.compose.shapes[idx];
+
+      if (action === 'rotateLeft') item.rotation = (item.rotation - 15) % 360;
+      if (action === 'rotateRight') item.rotation = (item.rotation + 15) % 360;
+      if (action === 'scaleUp') item.scale = Math.min(2.6, Math.round((item.scale + 0.15) * 100) / 100);
+      if (action === 'scaleDown') item.scale = Math.max(0.4, Math.round((item.scale - 0.15) * 100) / 100);
+      if (action === 'bringForward' && idx < state.compose.shapes.length - 1) {
+        state.compose.shapes.splice(idx, 1);
+        state.compose.shapes.splice(idx + 1, 0, item);
+      }
+      if (action === 'sendBackward' && idx > 0) {
+        state.compose.shapes.splice(idx, 1);
+        state.compose.shapes.splice(idx - 1, 0, item);
+      }
+      renderComposeCanvas();
+    };
+
+    window.duplicateSelectedShape = function () {
+      if (!state.compose.selectedUid) return;
+      const orig = state.compose.shapes.find(s => s.uid === state.compose.selectedUid);
+      if (!orig) return;
+      SoundFX.pop();
+      const newUid = 'sh_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      state.compose.shapes.push({
+        ...orig,
+        uid: newUid,
+        x: Math.min(730, orig.x + 28),
+        y: Math.min(490, orig.y + 28)
+      });
+      state.compose.selectedUid = newUid;
+      renderComposeCanvas();
+    };
+
+    window.deleteSelectedShape = function () {
+      if (!state.compose.selectedUid) return;
+      SoundFX.click();
+      state.compose.shapes = state.compose.shapes.filter(s => s.uid !== state.compose.selectedUid);
+      state.compose.selectedUid = null;
+      renderComposeCanvas();
+    };
+
+    window.confirmClearCompose = function () {
+      if (state.compose.shapes.length === 0) return;
+      openConfirmModal(
+        'Kosongkan Kanvas Susun?',
+        'Semua bentuk yang sudah disusun di kanvas ini akan dihapus.',
+        () => {
+          state.compose.shapes = [];
+          state.compose.selectedUid = null;
+          renderComposeCanvas();
+        }
+      );
+    };
+
+    function renderComposeCanvas() {
+      const shapesLayer = document.getElementById('compose-shapes-layer');
+      const selLayer = document.getElementById('compose-selection-layer');
+
+      shapesLayer.innerHTML = state.compose.shapes.map(item => {
+        const def = SHAPE_DEFINITIONS.find(d => d.id === item.shapeId);
+        if (!def) return '';
+        return `
+          <g data-uid="${item.uid}" transform="translate(${item.x}, ${item.y}) rotate(${item.rotation}) scale(${item.scale})">
+            ${def.render(item.fill)}
+          </g>`;
+      }).join('');
+
+      const selected = state.compose.shapes.find(s => s.uid === state.compose.selectedUid);
+      if (selected) {
+        selLayer.innerHTML = `
+          <g transform="translate(${selected.x}, ${selected.y}) rotate(${selected.rotation}) scale(${selected.scale})">
+            <rect x="-56" y="-56" width="112" height="112" rx="10" fill="none" stroke="#0284C7" stroke-width="2.5" stroke-dasharray="6 4"/>
+            <circle cx="-56" cy="-56" r="5" fill="#0284C7"/>
+            <circle cx="56" cy="-56" r="5" fill="#0284C7"/>
+            <circle cx="-56" cy="56" r="5" fill="#0284C7"/>
+            <circle cx="56" cy="56" r="5" fill="#0284C7"/>
+          </g>`;
+      } else {
+        selLayer.innerHTML = '';
+      }
+    }
+
+    function setupComposeCanvasEvents() {
+      const svg = document.getElementById('compose-svg');
+
+      function getSVGPoint(e) {
+        const rect = svg.getBoundingClientRect();
+        return {
+          x: ((e.clientX - rect.left) / rect.width) * 800,
+          y: ((e.clientY - rect.top) / rect.height) * 560
+        };
+      }
+
+      svg.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const shapeGroup = e.target.closest('[data-uid]');
+        if (!shapeGroup) {
+          state.compose.selectedUid = null;
+          renderComposeCanvas();
+          return;
+        }
+
+        const uid = shapeGroup.getAttribute('data-uid');
+        state.compose.selectedUid = uid;
+        const target = state.compose.shapes.find(s => s.uid === uid);
+
+        if (target) {
+          if (state.compose.step === 'color') {
+            // Tahap 2: Warnai tanpa menggeser!
+            target.fill = state.compose.selectedColor;
+            SoundFX.splash();
+          } else {
+            // Tahap 1: Siapkan drag dengan sentuhan mulus
+            svg.setPointerCapture(e.pointerId);
+            const pt = getSVGPoint(e);
+            state.compose.draggingUid = uid;
+            state.compose.dragOffsetX = pt.x - target.x;
+            state.compose.dragOffsetY = pt.y - target.y;
+            SoundFX.click();
+          }
+        }
+        renderComposeCanvas();
+      });
+
+      svg.addEventListener('pointermove', (e) => {
+        if (!state.compose.draggingUid || state.compose.step !== 'arrange') return;
+        e.preventDefault();
+        const target = state.compose.shapes.find(s => s.uid === state.compose.draggingUid);
+        if (!target) return;
+        const pt = getSVGPoint(e);
+        target.x = Math.max(30, Math.min(770, Math.round(pt.x - state.compose.dragOffsetX)));
+        target.y = Math.max(30, Math.min(530, Math.round(pt.y - state.compose.dragOffsetY)));
+        renderComposeCanvas();
+      });
+
+      const stopDrag = () => { state.compose.draggingUid = null; };
+      svg.addEventListener('pointerup', stopDrag);
+      svg.addEventListener('pointercancel', stopDrag);
+    }
+
+    /**
+     * =====================================================================
+     * 9. PENILAIAN IBU DIAN LESTARI, GALERI KELAS 4B, & PAPAN PERINGKAT
+     * =====================================================================
+     */
+    function captureColoringDataUrl() {
+      const paintCanvas = document.getElementById('coloring-paint-canvas');
+      const outlineCanvas = document.getElementById('coloring-outline-canvas');
+      const out = document.createElement('canvas');
+      out.width = 800;
+      out.height = 560;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(paintCanvas, 0, 0);
+      ctx.drawImage(outlineCanvas, 0, 0);
+      return out.toDataURL('image/png');
+    }
+
+    function captureComposeDataUrl() {
+      return new Promise((resolve) => {
+        const prevSel = state.compose.selectedUid;
+        state.compose.selectedUid = null;
+        renderComposeCanvas();
+
+        const svgEl = document.getElementById('compose-svg');
+        const clone = svgEl.cloneNode(true);
+        const guide = clone.querySelector('#compose-guide-layer');
+        if (guide) guide.remove();
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        state.compose.selectedUid = prevSel;
+        renderComposeCanvas();
+
+        const svgStr = new XMLSerializer().serializeToString(clone);
+        const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          const out = document.createElement('canvas');
+          out.width = 800;
+          out.height = 560;
+          const ctx = out.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, out.width, out.height);
+          ctx.drawImage(img, 0, 0, 800, 560);
+          URL.revokeObjectURL(url);
+          resolve(out.toDataURL('image/png'));
+        };
+        img.src = url;
+      });
+    }
+
+    window.submitArtwork = async function (mode) {
+      if (!state.currentStudent) return;
+
+      let stars = 1;
+      let points = 50;
+      let title = '';
+      let feedback = '';
+      let artworkTitle = '';
+      let dataUrl = '';
+
+      if (mode === 'coloring') {
+        const tpl = COLORING_TEMPLATES[state.coloring.templateIndex];
+        artworkTitle = tpl.name;
+        dataUrl = captureColoringDataUrl();
+
+        // Hitung persentase piksel berwarna pada paintCanvas
+        const pCtx = document.getElementById('coloring-paint-canvas').getContext('2d');
+        const imgData = pCtx.getImageData(0, 0, 800, 560).data;
+        let coloredPixels = 0;
+        for (let i = 3; i < imgData.length; i += 64) {
+          if (imgData[i] > 100) coloredPixels++;
+        }
+        const coverage = coloredPixels / (imgData.length / 64);
+
+        if (coverage >= 0.45) {
+          stars = 3;
+          points = 150;
+          title = 'Mahakarya Warna Kelas 4B!';
+          feedback = `Hebat sekali ${state.currentStudent.name}! Perpaduan warna pada "${tpl.name}" sangat rapi, cerah, dan penuh kreativitas. Terus pertahankan! — Ibu Dian Lestari`;
+        } else if (coverage >= 0.15) {
+          stars = 2;
+          points = 100;
+          title = 'Bagus Sekali, Seniman Cilik!';
+          feedback = `Kerja bagus ${state.currentStudent.name}! Kamu sudah mewarnai dengan rapi. Coba lengkapi bagian latar yang masih putih untuk meraih 3 Bintang Emas! — Ibu Dian Lestari`;
+        } else {
+          stars = 1;
+          points = 60;
+          title = 'Langkah Awal yang Baik!';
+          feedback = `Ayo lanjutkan memberi warna primer dan sekunder pada bagian-bagian gambar "${tpl.name}" agar karyamu makin hidup! — Ibu Dian Lestari`;
+        }
+      } else {
+        const thm = COMPOSE_THEMES[state.compose.themeIndex];
+        artworkTitle = thm.name;
+        dataUrl = await captureComposeDataUrl();
+
+        const count = state.compose.shapes.length;
+        const coloredCount = state.compose.shapes.filter(s => s.fill !== '#E2E8F0').length;
+
+        if (count >= 5 && coloredCount >= 3) {
+          stars = 3;
+          points = 150;
+          title = 'Komposisi Bentuk & Warna Juara!';
+          feedback = `Luar biasa ${state.currentStudent.name}! Susunan ${count} bentuk geometris & organis pada "${thm.name}" terlihat sangat seimbang dan harmonis! — Ibu Dian Lestari`;
+        } else if (count >= 2) {
+          stars = 2;
+          points = 100;
+          title = 'Susunan Bentuk yang Kreatif!';
+          feedback = `Bagus ${state.currentStudent.name}! Kamu sudah merangkai ${count} bentuk. Tambahkan hiasan dan warna di Tahap 2 agar meraih 3 Bintang Emas! — Ibu Dian Lestari`;
+        } else {
+          stars = 1;
+          points = 60;
+          title = 'Ayo Susun Lebih Banyak Bentuk!';
+          feedback = `Ketuk berbagai bentuk di Rak Bentuk sebelah kanan untuk menyusun karya yang lengkap ya! — Ibu Dian Lestari`;
+        }
+      }
+
+      state.lastResultDataUrl = dataUrl;
+      state.lastResultTitle = artworkTitle;
+      state.lastResultStars = stars;
+
+      const artId = `art_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const newArtwork = {
+        id: artId,
+        studentKey: state.currentStudent.key,
+        studentName: state.currentStudent.name,
+        studentAbsen: state.currentStudent.absen,
+        studentAvatar: state.currentStudent.avatar || '🎨',
+        mode,
+        title: artworkTitle,
+        stars,
+        points,
+        dataUrl,
+        reactions: { heart: 0, clap: 0, star: 0 },
+        createdAt: Date.now()
+      };
+
+      // Simpan karya & perbarui skor siswa
+      state.artworksList.unshift(newArtwork);
+      saveLocalJSON(LOCAL_KEYS.artworks, state.artworksList.slice(0, 24));
+
+      const st = state.studentsMap[state.currentStudent.key] || state.currentStudent;
+      st.stars = (st.stars || 0) + stars;
+      st.points = (st.points || 0) + points;
+      st.artworksCount = (st.artworksCount || 0) + 1;
+      st.updatedAt = Date.now();
+      state.studentsMap[st.key] = st;
+      state.currentStudent = st;
+      saveLocalJSON(LOCAL_KEYS.students, state.studentsMap);
+      saveLocalJSON(LOCAL_KEYS.session, st);
+
+      updateStudentHeaderUI();
+      updateGalleryBadges();
+
+      if (isCloudConnected && db && firebaseUser) {
+        try {
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'artworks', artId), newArtwork);
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', st.key), st, { merge: true });
+        } catch (err) {
+          console.warn('Karya tersimpan lokal:', err);
+        }
+      }
+
+      // Tampilkan Modal Penilaian Ibu Dian Lestari
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('result-points-badge').textContent = `+${points} Poin Kreativitas`;
+      document.getElementById('result-preview-img').src = dataUrl;
+      document.getElementById('result-feedback').textContent = feedback;
+      document.getElementById('result-stars').innerHTML = [1, 2, 3].map(n => `
+        <span class="inline-block star-pop" style="animation-delay: ${(n - 1) * 0.15}s">${n <= stars ? '⭐' : '☆'}</span>
+      `).join('');
+
+      document.getElementById('modal-result').classList.remove('hidden');
+      SoundFX.fanfare();
+      launchConfetti();
+    };
+
+    window.closeResultModal = function () {
+      SoundFX.click();
+      document.getElementById('modal-result').classList.add('hidden');
+    };
+
+    window.closeResultAndViewGallery = function () {
+      SoundFX.click();
+      document.getElementById('modal-result').classList.add('hidden');
+      switchStudioTab('gallery');
+    };
+
+    window.downloadLastResultPNG = function () {
+      if (!state.lastResultDataUrl) return;
+      SoundFX.pop();
+      triggerPNGDownload({
+        dataUrl: state.lastResultDataUrl,
+        title: state.lastResultTitle,
+        studentName: state.currentStudent?.name || 'Siswa 4B',
+        studentAbsen: state.currentStudent?.absen || '-',
+        stars: state.lastResultStars || 3
+      });
+    };
+
+    function triggerPNGDownload({ dataUrl, title, studentName, studentAbsen, stars }) {
+      const img = new Image();
+      img.onload = () => {
+        const frameW = 880;
+        const frameH = 700;
+        const out = document.createElement('canvas');
+        out.width = frameW;
+        out.height = frameH;
+        const ctx = out.getContext('2d');
+
+        // Latar Bingkai Sertifikat Seni Rupa
+        ctx.fillStyle = '#FFFBEB';
+        ctx.fillRect(0, 0, frameW, frameH);
+
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(14, 14, frameW - 28, frameH - 28);
+
+        ctx.strokeStyle = '#FDE68A';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(26, 26, frameW - 52, frameH - 52);
+
+        // Header Identitas Sekolah & Guru
+        ctx.fillStyle = '#78350F';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('SD NEGERI TAMBAKREJO • KELAS 4B • GURU: IBU DIAN LESTARI', frameW / 2, 62);
+
+        // Gambar Karya Siswa
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(40, 80, 800, 560);
+        ctx.drawImage(img, 40, 80, 800, 560);
+        ctx.strokeStyle = '#D6B88D';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(40, 80, 800, 560);
+
+        // Footer Nama Siswa, Nomor Absen, Judul Karya, & Bintang
+        ctx.fillStyle = '#1E293B';
+        ctx.font = 'bold 19px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Seniman: ${studentName} (Absen ${studentAbsen}) — ${title}`, 44, 672);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#D97706';
+        ctx.fillText('⭐'.repeat(stars || 1), frameW - 44, 672);
+
+        const safeName = `karya_${studentName}_absen_${studentAbsen}_${title}.png`.toLowerCase().replace(/[^a-z0-9.]+/g, '_');
+        const a = document.createElement('a');
+        a.href = out.toDataURL('image/png');
+        a.download = safeName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Gambar karya berbingkai PNG berhasil diunduh!', '📥');
+      };
+      img.src = dataUrl;
+    }
+
+    function updateGalleryBadges() {
+      document.getElementById('badge-class-gallery').textContent = state.artworksList.length;
+      if (state.currentStudent) {
+        const mine = state.artworksList.filter(a => a.studentKey === state.currentStudent.key);
+        document.getElementById('badge-my-works').textContent = mine.length;
+      }
+    }
+
+    window.renderClassGallery = function () {
+      const grid = document.getElementById('class-gallery-grid');
+      const modeFilter = document.getElementById('gallery-filter-mode').value;
+      const search = document.getElementById('gallery-search-student').value.trim().toLowerCase();
+
+      const filtered = state.artworksList.filter(art => {
+        const matchMode = modeFilter === 'all' || art.mode === modeFilter;
+        const matchName = !search || (art.studentName || '').toLowerCase().includes(search);
+        return matchMode && matchName;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white rounded-3xl p-10 text-center border-2 border-indigo-100">
+            <div class="text-5xl mb-2">🎨</div>
+            <p class="font-display font-bold text-lg text-stone-700">Belum ada karya yang ditampilkan.</p>
+            <p class="text-xs sm:text-sm text-stone-500">Jadilah siswa Kelas 4B pertama yang mengirimkan gambar ke Galeri Kelas!</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(art => {
+        const r = art.reactions || { heart: 0, clap: 0, star: 0 };
+        const modeLabel = art.mode === 'coloring' ? 'Mewarnai Gambar' : 'Susun & Warnai';
+        return `
+          <div class="bg-white rounded-3xl p-3.5 border-2 border-indigo-100 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">${art.studentAvatar || '🎨'}</span>
+                  <div class="min-w-0">
+                    <p class="font-display font-bold text-sm text-stone-900 truncate">${escapeHTML(art.studentName)}</p>
+                    <p class="text-[11px] font-bold text-stone-500">Absen ${art.studentAbsen} • ${modeLabel}</p>
+                  </div>
+                </div>
+                <span class="text-xs font-extrabold bg-amber-100 text-amber-900 px-2 py-1 rounded-full shrink-0">${'⭐'.repeat(art.stars || 1)}</span>
+              </div>
+              <div onclick="openArtworkZoomModal('${art.id}')" class="bg-stone-50 rounded-2xl p-1.5 border border-stone-200 mb-2.5 cursor-zoom-in relative group" title="Ketuk untuk memperbesar gambar">
+                <img src="${art.dataUrl}" alt="${escapeHTML(art.title)}" class="w-full h-44 object-contain rounded-xl bg-white" />
+                <span class="absolute bottom-2.5 right-2.5 bg-stone-900/75 text-white text-[11px] font-bold px-2 py-0.5 rounded-lg">🔍 Perbesar</span>
+              </div>
+              <h4 class="font-display font-bold text-sm text-indigo-950 mb-2.5 truncate">${escapeHTML(art.title)}</h4>
+            </div>
+
+            <div class="flex items-center justify-between gap-1.5 pt-2 border-t border-stone-100">
+              <button type="button" onclick="reactToArtwork('${art.id}', 'heart')" class="flex-1 btn-tactile py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-extrabold text-xs border border-rose-200 flex items-center justify-center gap-1">
+                <span>❤️</span> <span>${r.heart || 0}</span>
+              </button>
+              <button type="button" onclick="reactToArtwork('${art.id}', 'clap')" class="flex-1 btn-tactile py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-extrabold text-xs border border-amber-200 flex items-center justify-center gap-1">
+                <span>👏</span> <span>${r.clap || 0}</span>
+              </button>
+              <button type="button" onclick="reactToArtwork('${art.id}', 'star')" class="flex-1 btn-tactile py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-extrabold text-xs border border-indigo-200 flex items-center justify-center gap-1">
+                <span>🌟</span> <span>${r.star || 0}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.openArtworkZoomModal = function (artId) {
+      const art = state.artworksList.find(a => a.id === artId);
+      if (!art) return;
+      SoundFX.click();
+      document.getElementById('zoom-avatar').textContent = art.studentAvatar || '🎨';
+      document.getElementById('zoom-title').textContent = art.title;
+      document.getElementById('zoom-meta').textContent = `${art.studentName} (Absen ${art.studentAbsen}) • Kelas 4B SD Negeri Tambakrejo • ${'⭐'.repeat(art.stars || 1)}`;
+      document.getElementById('zoom-image').src = art.dataUrl;
+      document.getElementById('modal-artwork-zoom').classList.remove('hidden');
+    };
+
+    window.closeArtworkZoomModal = function () {
+      SoundFX.click();
+      document.getElementById('modal-artwork-zoom').classList.add('hidden');
+    };
+
+    window.reactToArtwork = async function (artId, type) {
+      SoundFX.pop();
+      const art = state.artworksList.find(a => a.id === artId);
+      if (!art) return;
+      if (!art.reactions) art.reactions = { heart: 0, clap: 0, star: 0 };
+      art.reactions[type] = (art.reactions[type] || 0) + 1;
+      saveLocalJSON(LOCAL_KEYS.artworks, state.artworksList.slice(0, 24));
+      renderClassGallery();
+
+      if (isCloudConnected && db && firebaseUser) {
+        try {
+          const artRef = doc(db, 'artifacts', appId, 'public', 'data', 'artworks', artId);
+          await updateDoc(artRef, { [`reactions.${type}`]: increment(1) });
+        } catch (e) {}
+      }
+    };
+
+    window.renderLeaderboard = function () {
+      const podiumEl = document.getElementById('leaderboard-podium');
+      const tbody = document.getElementById('leaderboard-table-body');
+      const ranked = Object.values(state.studentsMap).sort((a, b) => {
+        if ((b.stars || 0) !== (a.stars || 0)) return (b.stars || 0) - (a.stars || 0);
+        if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
+        return Number(a.absen) - Number(b.absen);
+      });
+
+      const medals = ['🥇 Juara 1', '🥈 Juara 2', '🥉 Juara 3'];
+      const top3 = ranked.slice(0, 3);
+      podiumEl.innerHTML = top3.map((st, idx) => `
+        <div class="bg-white rounded-3xl p-4 border-4 ${
+          idx === 0 ? 'border-amber-400 shadow-lg' : idx === 1 ? 'border-slate-300' : 'border-orange-300'
+        } text-center">
+          <span class="inline-block text-xs font-extrabold px-3 py-0.5 rounded-full bg-amber-100 text-amber-900 mb-2">${medals[idx]}</span>
+          <div class="text-4xl mb-1">${st.avatar || '🎨'}</div>
+          <h3 class="font-display font-bold text-base text-stone-900 truncate">${escapeHTML(st.name)}</h3>
+          <p class="text-xs font-bold text-stone-500 mb-2">Absen ${st.absen}</p>
+          <div class="bg-amber-50 rounded-xl py-1.5 px-2 font-extrabold text-xs text-amber-950">
+            ⭐ ${st.stars || 0} Bintang • ${st.points || 0} Poin
+          </div>
+        </div>
+      `).join('');
+
+      if (ranked.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-stone-500">Belum ada data peringkat Kelas 4B.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = ranked.map((st, idx) => `
+        <tr class="${state.currentStudent?.key === st.key ? 'bg-amber-50' : ''}">
+          <td class="py-3 px-4 font-display font-bold text-indigo-900">#${idx + 1}</td>
+          <td class="py-3 px-4">${st.avatar || '🎨'} ${escapeHTML(st.name)} <span class="text-xs text-stone-500">(Absen ${st.absen})</span></td>
+          <td class="py-3 px-4 text-center">${st.artworksCount || 0}</td>
+          <td class="py-3 px-4 text-center text-amber-600">${st.stars || 0} ⭐</td>
+          <td class="py-3 px-4 text-right text-emerald-700">${st.points || 0}</td>
+        </tr>
+      `).join('');
+    };
+
+    window.renderMyWorks = function () {
+      const grid = document.getElementById('my-works-grid');
+      if (!state.currentStudent) return;
+      const mine = state.artworksList.filter(a => a.studentKey === state.currentStudent.key);
+
+      if (mine.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white rounded-3xl p-10 text-center border-2 border-emerald-100">
+            <div class="text-5xl mb-2">📁</div>
+            <p class="font-display font-bold text-lg text-stone-700">Portofolio karyamu masih kosong.</p>
+            <p class="text-xs sm:text-sm text-stone-500">Selesaikan gambar mewarnai atau susunan bentuk lalu klik "Kirim & Nilai Karyaku!".</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = mine.map(art => `
+        <div class="bg-white rounded-3xl p-3.5 border-2 border-emerald-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-extrabold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                ${art.mode === 'coloring' ? 'Mewarnai' : 'Susun & Warnai'}
+              </span>
+              <span>${'⭐'.repeat(art.stars || 1)}</span>
+            </div>
+            <img src="${art.dataUrl}" alt="${escapeHTML(art.title)}" class="w-full h-44 object-contain rounded-2xl border border-stone-200 bg-white mb-2" />
+            <h4 class="font-display font-bold text-sm text-stone-800 truncate mb-2">${escapeHTML(art.title)}</h4>
+          </div>
+          <button type="button" onclick="downloadArtworkById('${art.id}')" class="w-full btn-tactile py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center justify-center gap-1.5">
+            <span>📥</span> <span>Unduh PNG</span>
+          </button>
+        </div>
+      `).join('');
+    };
+
+    window.downloadArtworkById = function (artId) {
+      const art = state.artworksList.find(a => a.id === artId);
+      if (!art) return;
+      SoundFX.pop();
+      triggerPNGDownload({
+        dataUrl: art.dataUrl,
+        title: art.title,
+        studentName: art.studentName,
+        studentAbsen: art.studentAbsen,
+        stars: art.stars || 1
+      });
+    };
+
+    /**
+     * =====================================================================
+     * 10. MODAL KONFIRMASI KUSTOM, CONFETTI, & UTILITAS
+     * =====================================================================
+     */
+    let confirmCallback = null;
+    function openConfirmModal(title, message, onYes) {
+      SoundFX.click();
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+      confirmCallback = onYes;
+      document.getElementById('modal-confirm').classList.remove('hidden');
+    }
+
+    window.closeConfirmModal = function () {
+      SoundFX.click();
+      document.getElementById('modal-confirm').classList.add('hidden');
+      confirmCallback = null;
+    };
+
+    document.getElementById('confirm-yes-btn').addEventListener('click', async () => {
+      SoundFX.pop();
+      const fn = confirmCallback;
+      closeConfirmModal();
+      if (typeof fn === 'function') await fn();
+    });
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function launchConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const colors = ['#EF4444', '#FACC15', '#2563EB', '#16A34A', '#F97316', '#9333EA'];
+      const pieces = Array.from({ length: 80 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * 100,
+        w: 8 + Math.random() * 7,
+        h: 6 + Math.random() * 6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: 3 + Math.random() * 4.5,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.15
+      }));
+
+      let frame = 0;
+      function step() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vRot;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        });
+        frame++;
+        if (frame < 120) requestAnimationFrame(step);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      requestAnimationFrame(step);
+    }
+
+    /**
+     * =====================================================================
+     * 11. INISIALISASI SAAT HALAMAN DIMUAT
+     * =====================================================================
+     */
+    window.addEventListener('DOMContentLoaded', async () => {
+      initAvatarSelector();
+      renderAllPalettes();
+      initColoringModule();
+      initComposeModule();
+      renderAnnouncementBanners();
+      renderQuickLoginList();
+      updateGalleryBadges();
+
+      if (state.currentStudent) {
+        enterStudioForStudent(state.currentStudent);
+      }
+
+      await initCloudSync();
+    });
+  </script>
+</body>
+</html>
